@@ -14,7 +14,7 @@ Response.CodePage = 65001
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
   <style>
-    .dropdown-submenu {
+   menu {
       position: relative;
     }
 
@@ -65,10 +65,10 @@ Response.CodePage = 65001
       <div class="col-auto ms-auto">
         <select id="torreSelect" class="form-select" required>
           <option selected disabled>Selecione a Torre</option>
-          <option value="Torre_A">TORRE A</option>
-          <option value="Torre_B">TORRE B</option>
-          <option value="Torre_C">TORRE C</option>
-          <option value="Torre_L">TORRE L</option>
+          <option value="TORRE_A">TORRE_A</option>
+          <option value="TORRE_B">TORRE_B</option>
+          <option value="TORRE_C">TORRE_C</option>
+          <option value="TORRE_L">TORRE_L</option>
         </select>
       </div>
 
@@ -97,17 +97,51 @@ Response.CodePage = 65001
         </tr>
       </thead>
       <tbody id="tabelaApresentacoes">
-        <!-- Os dados serão preenchidos aqui via tabela_turno -->
+        <!--#include file='conexao.asp' -->
+        <%
+
+        Dim sql, rs
+        sql = "SELECT ld.detalhe" &_
+        ", ld.usuario_dss" &_
+        ", ra.data_hora_ra" &_
+        ", ra.supervisao_ra" &_
+        ", ra.local_ra " &_
+        "FROM registros_apresentacao AS ra " &_
+        "INNER JOIN login_dss AS ld ON ra.usuario_dss = ld.usuario_dss"
+        Set rs = conn.Execute(sql)
+
+        if rs.EOF = false then
+          Do While Not rs.EOF
+            response.Write "<tr>"
+              response.write "<td class='fs-4 fw-bold'>" & rs("detalhe") & "</td>"
+              response.write "<td class='fs-4 fw-bold'>" & rs("usuario_dss") & "</td>"
+              response.write "<td class='fs-4 fw-bold'>" & rs("data_hora_ra") & "</td>"
+              response.write "<td class='fs-4 fw-bold'>" & rs("supervisao_ra") & "</td>"
+              response.write "<td class='fs-4 fw-bold'>" & rs("local_ra") & "</td>"
+            response.write "</tr>"
+            rs.MoveNext
+          Loop
+        else
+          response.write "<tr class='table-danger'><td colspan='5'>No records found</td></tr>"
+        end if
+
+        ' Close the recordset and connection
+        rs.Close
+        Set rs = Nothing
+        conn.Close
+        Set conn = Nothing
+
+        %>
       </tbody>
     </table>
   </div>
 
   <script>
     const guaritasPorTorre = {
-      "Torre_A": ["Guarita_7", "HT6"],
-      "Torre_B": ["Guarita_2", "Guarita_3", "Guarita_4", "Guarita_5"],
-      "Torre_C": ["Guarita_da_Rampa", "Guarita_do_Corte"],
-      "Torre_L": ["Guarita_da_Torre_L"]
+      "TORRE_A": ["Guarita_7", "HT6"],
+      "TORRE_B": ["Guarita_2", "Guarita_3", "Guarita_4", "Guarita_5"],
+      "TORRE_C": ["Guarita_da_Rampa", "Guarita_do_Corte"],
+      "TORRE_L": ["Guarita_da_Torre_L"]
     };
 
     document.getElementById('torreSelect').addEventListener('change', function () {
@@ -125,9 +159,37 @@ Response.CodePage = 65001
       }
     });
   </script>
-    <script src="./static/js/ajax.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('formApresentacao').addEventListener('submit', function (event) {
+          event.preventDefault();
+
+          const matricula = document.getElementById('matricula').value;
+          const torre = document.getElementById('torreSelect').value;
+          const guarita = document.getElementById('guaritaSelect').value;
+
+          if (!torre || !guarita) {
+              alert("Por favor, preencha todos os campos.");
+              return;
+          }
+
+          fetch("inserir.asp", {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/x-www-form-urlencoded"
+              },
+              body: `matricula=${encodeURIComponent(matricula)}&torre=${encodeURIComponent(torre)}&guarita=${encodeURIComponent(guarita)}`
+              })
+              .then(response => response.text())
+              .then(data => {
+                  const mensagemDiv = document.getElementById('mensagem');
+                  mensagemDiv.innerHTML = data;
+              });
+      });
+    });
+  </script>
   <script src="./static/js/tabela_turno.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
