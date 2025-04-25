@@ -25,17 +25,17 @@ Response.CodePage = 65001
       Dim data_ultima_atualizacao, sql
       Set conn = getConexao()
 
-      sql = "SELECT data_hora "&_
-        "FROM registro_apresentacao "&_
-        "ORDER BY data_hora DESC LIMIT 1"
+      sql = "SELECT TOP 1 data_hora_ra "&_
+        "FROM registros_apresentacao "&_
+        "ORDER BY data_hora_ra DESC"
       Set data_ultima_atualizacao = conn.execute(sql)
 
       If Not data_ultima_atualizacao.EOF Then
-        Response.Write(FormatDateTime(data_ultima_atualizacao("data_hora"), vbShortDate) & " " & FormatDateTime(data_ultima_atualizacao("data_hora"), vbLongTime))
+        Response.Write(FormatDateTime(data_ultima_atualizacao("data_hora_ra"), vbShortDate) & " " & FormatDateTime(data_ultima_atualizacao("data_hora_ra"), vbLongTime))
       Else
         Response.Write("--/--/-- --:--:--")
       End If
-
+      
       %>
     </div>
   </header>
@@ -61,10 +61,10 @@ Response.CodePage = 65001
       <div class="col-auto ms-auto">
         <select id="torreSelect" class="form-select" required>
           <option selected disabled>Selecione a Torre</option>
-          <option value="Torre_A">TORRE A</option>
-          <option value="Torre_B">TORRE B</option>
-          <option value="Torre_C">TORRE C</option>
-          <option value="Torre_L">TORRE L</option>
+          <option value="TORRE_A">TORRE_A</option>
+          <option value="TORRE_B">TORRE_B</option>
+          <option value="TORRE_C">TORRE_C</option>
+          <option value="TORRE_L">TORRE_L</option>
         </select>
       </div>
 
@@ -100,10 +100,10 @@ Response.CodePage = 65001
 
   <script>
     const guaritasPorTorre = {
-      "Torre_A": ["Guarita_7", "HT6"],
-      "Torre_B": ["Guarita_2", "Guarita_3", "Guarita_4", "Guarita_5"],
-      "Torre_C": ["Guarita_da_Rampa", "Guarita_do_Corte"],
-      "Torre_L": ["Guarita_da_Torre_L"]
+      "TORRE_A": ["Guarita_7", "HT6"],
+      "TORRE_B": ["Guarita_2", "Guarita_3", "Guarita_4", "Guarita_5"],
+      "TORRE_C": ["Guarita_da_Rampa", "Guarita_do_Corte"],
+      "TORRE_L": ["Guarita_da_Torre_L"]
     };
 
     document.getElementById('torreSelect').addEventListener('change', function () {
@@ -122,7 +122,7 @@ Response.CodePage = 65001
     });
     
   </script>
-    <script src="./static/js/ajax.js"></script>
+  <script src="./static/js/ajax.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
