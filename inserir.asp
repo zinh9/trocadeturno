@@ -17,54 +17,45 @@ else
 end if
 
 'Verifica se o funcionário já está cadastrado
-sql = "SELECT id_funcionario, id_supervisao "&_
-"FROM funcionario " &_
-"WHERE matricula = '" & matricula & "'"
+sql = "SELECT usuario_dss, supervisao "&_
+"FROM login_dss " &_
+"WHERE usuario_dss = '" & matricula & "'"
 
 Set rs = conn.execute(sql)
 
 if not rs.EOF Then
-    Dim id_funcionario, id_supervisao
-    id_funcionario = rs("id_funcionario")
-    id_supervisao = rs("id_supervisao")
+    Dim usuario_dss, supervisao
+    usuario_dss = rs("usuario_dss")
+    supervisao = rs("supervisao")
 
     turno = turnoAtual()
 
     'Verifica se o funcionário já está cadastrado no turno atual
 
     If turno = "manha" Then
-        condicaoHora = "data_hora BETWEEN CURDATE() + INTERVAL 6 HOUR AND CURDATE() + INTERVAL 17 HOUR"
+        condicaoHora = "data_hora_ra BETWEEN DateAdd('h', 6, Date()) AND DateAdd('h', 17, Date())"
     Else
-        condicaoHora = "(data_hora BETWEEN CURDATE() + INTERVAL 18 HOUR AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND " &_
-                    "OR data_hora BETWEEN CURDATE() AND CURDATE() + INTERVAL 6 HOUR)"
+        condicaoHora = "(data_hora_ra BETWEEN DateAdd('h', 18, Date()) AND DateAdd('s', -1, DateAdd('d', 1, Date())) OR data_hora_ra BETWEEN Date() AND DateAdd('h', 6, Date()))"
     End If
 
 
     sql = "SELECT COUNT(*) AS total "&_
-    "FROM registro_apresentacao "&_
-    "WHERE id_funcionario = '" & id_funcionario & "' "&_
+    "FROM registros_apresentacao "&_
+    "WHERE usuario_dss = '" & usuario_dss & "' "&_
     "AND " & condicaoHora
     set rs = conn.execute(sql)
 
     if rs("total") = "0" Then
-        
-        sql = "SELECT torre "&_
-        "FROM supervisao "&_
-        "WHERE id_supervisao = '" & id_supervisao & "'"
 
-        conn.execute(sql)
-        set rs = conn.execute(sql)
-
-        if torre <> rs("torre") and confirmado <> "1" then
-            response.write("confirmar|" & rs("torre"))
+        if torre <> supervisao and confirmado <> "1" then
+            response.write("confirmar|" & supervisao)
         else
-            sql = "INSERT INTO registro_apresentacao (id_funcionario, data_hora, supervisao, guarita) " & _
-                "VALUES ('" & id_funcionario & "', NOW(), '" & torre & "', '" & guarita & "')"
+            sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_ra, supervisao, local_ra) " & _
+                "VALUES ('" & usuario_dss & "', Now(), '" & torre & "', '" & guarita & "')"
             conn.execute(sql)
-            response.write("ok")
+            
+            response.write "ok"
         end if
-
-        
     Else
         response.write("Funcionário já cadastrado no turno atual.")
     end if
