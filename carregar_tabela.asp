@@ -8,17 +8,18 @@ Set conn = getConexao()
 turno = turnoAtual()
 
 if turno = "manha" Then
-    sql = "SELECT f.nome, f.matricula, ra.data_hora " &_
-    "FROM registro_apresentacao ra " &_
-    "INNER JOIN funcionario f ON ra.id_funcionario = f.id_funcionario " &_
-    "WHERE HOUR(ra.data_hora) BETWEEN 6 AND 17 AND DATE(ra.data_hora) = CURDATE() " &_
-    "ORDER BY ra.data_hora DESC"
+    sql = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra " &_
+    "FROM registros_apresentacao AS ra " &_
+    "INNER JOIN login_dss AS ld ON ra.usuario_dss = ld.usuario_dss " &_
+    "GROUP BY ld.detalhe, ld.usuario_dss, ra.data_hora_ra, DatePart('h',[ra].[data_hora_ra]), DateValue([ra].[data_hora_ra]) " &_
+    "HAVING (((DatePart('h',[ra].[data_hora_ra])) Between 6 And 17) AND ((DateValue([ra].[data_hora_ra]))=Date())) "&_
+    "ORDER BY ra.data_hora_ra DESC"
 Else
-    sql = "SELECT f.nome, f.matricula, ra.data_hora " &_
-    "FROM registro_apresentacao ra " &_
-    "INNER JOIN funcionario f ON ra.id_funcionario = f.id_funcionario " &_
-    "WHERE (HOUR(ra.data_hora) >= 18 OR HOUR(ra.data_hora) < 6) AND DATE(ra.data_hora) = CURDATE() " &_
-    "ORDER BY ra.data_hora DESC"
+    sql = "SELECT ld.detalhe, ld.usuario_dss, ra.data_hora_ra " & _
+    "FROM registros_apresentacao AS ra " & _
+    "INNER JOIN login_dss AS ld ON ra.usuario_dss = ld.usuario_dss " & _
+    "WHERE (DatePart('h', ra.data_hora_ra) >= 18 OR DatePart('h', ra.data_hora_ra) < 6) AND DateValue(ra.data_hora_ra) = Date() " & _
+    "ORDER BY ra.data_hora_ra DESC;"
 
 end if
 
@@ -28,7 +29,7 @@ do while not rs.EOF
     Response.Write "<tr>"
         Response.Write "<td class='fs-3 fw-bold'>" & rs("nome") & "</td>"
         Response.Write "<td class='fs-3 fw-bold'>" & rs("matricula") & "</td>"
-        Response.Write "<td class='fs-3 fw-bold'>" & rs("data_hora") & "</td>"
+        Response.Write "<td class='fs-3 fw-bold'>" & rs("data_hora_ra") & "</td>"
     Response.Write "</tr>"
     rs.MoveNext
 Loop
