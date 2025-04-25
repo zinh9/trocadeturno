@@ -1,4 +1,5 @@
 <%@ Language="VBScript" %>
+<!--#include file='conexao.asp' -->
 <%
 Response.Charset = "UTF-8"
 Response.CodePage = 65001
@@ -12,25 +13,6 @@ Response.CodePage = 65001
   <title>Controle de Apresentação</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-
-  <style>
-    .dropdown-submenu {
-      position: relative;
-    }
-
-    .dropdown-submenu .dropdown-menu {
-      display: none;
-      position: absolute;
-      left: 100%;
-      top: 0;
-      margin-top: 0;
-      margin-left: 0;
-    }
-
-    .dropdown-submenu:hover .dropdown-menu {
-      display: block;
-    }
-  </style>
 </head>
 
 <body style="background-color: rgb(55, 55, 55);">
@@ -39,16 +21,30 @@ Response.CodePage = 65001
     <div class="fs-1 fw-bold mt-3">SISTEMA TROCA DE TURNO - OP1</div>
     <div class="fs-6 mr-4 ms-auto text-end">
       Última atualização: <br>
-      <%= now() %>
+      <%
+      Dim data_ultima_atualizacao, sql
+      Set conn = getConexao()
+
+      sql = "SELECT data_hora "&_
+        "FROM registro_apresentacao "&_
+        "ORDER BY data_hora DESC LIMIT 1"
+      Set data_ultima_atualizacao = conn.execute(sql)
+
+      If Not data_ultima_atualizacao.EOF Then
+        Response.Write(FormatDateTime(data_ultima_atualizacao("data_hora"), vbShortDate) & " " & FormatDateTime(data_ultima_atualizacao("data_hora"), vbLongTime))
+      Else
+        Response.Write("--/--/-- --:--:--")
+      End If
+
+      %>
     </div>
   </header>
 
   <div class="container-fluid px-4">
-    <div class="row md-4">
+    <div class="row md-2">
       <div class="col-md-auto">
         <form method="post" id="formApresentacao">
           <div class="row g-3 align-items-center">
-            <div class="col-auto d-flex gap-2 ms-auto"></div>
             <div class="col-auto">
               <input type="text" id="matricula" name="matricula" class="form-control" placeholder="Digite sua matrícula" required>
             </div>
@@ -87,8 +83,8 @@ Response.CodePage = 65001
   </div>
 
   <div class="table-responsive mt-3">
-    <table class="table table-bordered table-hover table-lg table-striped table-dark table-sm rounded">
-      <thead class="table-primary">
+    <table class="table table-bordered table-hover table-striped table-dark table-sm">
+      <thead class="table-light text-center fs-3 fw-bold">
         <tr>
           <th class="fs-3 fw-bold">Nome</th>
           <th class="fs-3 fw-bold">Matrícula</th>
@@ -124,9 +120,9 @@ Response.CodePage = 65001
         });
       }
     });
+    
   </script>
     <script src="./static/js/ajax.js"></script>
-  <script src="./static/js/tabela_turno.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

@@ -1,47 +1,78 @@
-<%@ Language="VBScript" %>
+<!--#include file='conexao.asp' -->
+<!--#include file='utils.asp' -->
 <%
-Response.Charset = "UTF-8"
-Dim conn, rs, sql, matricula, torre, guarita, id_supervisao, id_funcionario, id_supervisao_funcionario, msg, confirmado
 
-Set conn = Server.CreateObject("ADODB.Connection")
-conn.Open "Driver={MySQL ODBC 9.2 Unicode Driver};Server=localhost;Database=teste_vale;UID=root;PWD=admin;"
+Dim matricula, torre, guarita, conn, rs, turno, sql, confirmado
 
-matricula = Request.Form("matricula")
-torre = Request.Form("torre")
-guarita = Request.Form("guarita")
-confirmado = Request.Form("confirmado")
+Set conn = getConexao()
 
-sql = "SELECT s.torre, s.local_g, s.id_supervisao, f.id_funcionario FROM funcionario f INNER JOIN supervisao s ON f.id_supervisao = s.id_supervisao WHERE f.matricula = '" & matricula & "'"
-Set rs = conn.Execute(sql)
+matricula = Request.form("matricula")
+torre = Request.form("torre")
+guarita = Request.form("guarita")
 
-If Not rs.EOF Then
-    id_supervisao_funcionario = rs("id_supervisao")
+if Request.form("confirmado") = "" then
+    confirmado = "0"
+else
+    confirmado = Request.form("confirmado")
+end if
+
+'Verifica se o funcionário já está cadastrado
+sql = "SELECT id_funcionario, id_supervisao "&_
+"FROM funcionario " &_
+"WHERE matricula = '" & matricula & "'"
+
+Set rs = conn.execute(sql)
+
+if not rs.EOF Then
+    Dim id_funcionario, id_supervisao
     id_funcionario = rs("id_funcionario")
-Else
-    Response.Write "<div class='text-danger'>Funcionário não encontrado.</div>"
-    Response.End
-End If
-
-sql = "SELECT id_supervisao FROM supervisao WHERE torre = '" & torre & "' AND local_g = '" & guarita & "'"
-Set rs = conn.Execute(sql)
-
-If Not rs.EOF Then
     id_supervisao = rs("id_supervisao")
+
+    turno = turnoAtual()
+
+    'Verifica se o funcionário já está cadastrado no turno atual
+
+    If turno = "manha" Then
+        condicaoHora = "data_hora BETWEEN CURDATE() + INTERVAL 6 HOUR AND CURDATE() + INTERVAL 17 HOUR"
+    Else
+        condicaoHora = "(data_hora BETWEEN CURDATE() + INTERVAL 18 HOUR AND CURDATE() + INTERVAL 1 DAY - INTERVAL 1 SECOND " &_
+                    "OR data_hora BETWEEN CURDATE() AND CURDATE() + INTERVAL 6 HOUR)"
+    End If
+
+
+    sql = "SELECT COUNT(*) AS total "&_
+    "FROM registro_apresentacao "&_
+    "WHERE id_funcionario = '" & id_funcionario & "' "&_
+    "AND " & condicaoHora
+    set rs = conn.execute(sql)
+
+    if rs("total") = "0" Then
+        
+        sql = "SELECT torre "&_
+        "FROM supervisao "&_
+        "WHERE id_supervisao = '" & id_supervisao & "'"
+
+        conn.execute(sql)
+        set rs = conn.execute(sql)
+
+        if torre <> rs("torre") and confirmado <> "1" then
+            response.write("confirmar|" & rs("torre"))
+        else
+            sql = "INSERT INTO registro_apresentacao (id_funcionario, data_hora, supervisao, guarita) " & _
+                "VALUES ('" & id_funcionario & "', NOW(), '" & torre & "', '" & guarita & "')"
+            conn.execute(sql)
+            response.write("ok")
+        end if
+
+        
+    Else
+        response.write("Funcionário já cadastrado no turno atual.")
+    end if
 Else
-    Response.Write "<div class='text-danger'>Guarita não encontrada.</div>"
-    Response.End
-End If
+    response.write("Funcionário não encontrado.")
+end if
 
-If id_supervisao_funcionario <> id_supervisao AND confirmado <> "sim" Then
-    Response.Write "<div class='text-warning'>Supervisão diferente. Deseja continuar?</div><div id='confirmar-supervisao' data-supervisao='" & torre & "' data-guarita='" & guarita & "'></div>"
-    Response.End
-End If
-
-sql = "INSERT INTO registro_apresentacao (id_funcionario, data_hora, supervisao, local_g) VALUES (" & id_funcionario & ", NOW(), '" & torre & "', '" & guarita & "')"
-conn.Execute(sql)
-
-Response.Write "<div class='text-success'>Apresentação registrada com sucesso.</div>"
-
-conn.Close
+conn.close
 Set conn = Nothing
+
 %>
