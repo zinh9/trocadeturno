@@ -55,20 +55,10 @@ Response.CodePage = 65001
 
   <div class="container-fluid px-4">
     <div class="row md-2">
-      <div class="col-md-auto">
-        <form method="post" id="formApresentacao">
-          <div class="row g-3 align-items-center">
-            <div class="col-auto">
-              <input type="text" id="matricula" name="matricula" class="form-control" placeholder="Digite sua matrícula" required>
-            </div>
-            <div class="col-auto">
-              <button type="submit" class="btn btn-primary">
-                <i class="fas fa-check"></i> Apresentar
-              </button>
-            </div>
-            <div class="col_auto " id="mensagem"></div>
-          </div>
-        </form>
+    
+      <div class="col-auto card-text">
+        <h5 class="h1 text-white">Funcionários Apresentados</h5>
+        <div class="text-white" id="consultaSupervisao"></div>
       </div>
 
       <div class="col-auto ms-auto">
@@ -86,18 +76,8 @@ Response.CodePage = 65001
           <option selected disabled>Selecione a Guarita</option>
         </select>
       </div>
-
-      <div class="col-auto">
-        <button id="filtrar" class="btn btn-secondary">
-          <i class="fas fa-filter"></i> Filtrar
-        </button>
     </div>
 
-    <div class="row">
-      <div class="col-12">
-        <h5 class="card-title h1 text-white mt-4">Funcionários Apresentados</h5>
-      </div>
-    </div>
   </div>
 
   <div class="table-responsive mt-3">
@@ -111,7 +91,7 @@ Response.CodePage = 65001
         </tr>
       </thead>
       <tbody id="tabelaApresentacoes">
-        <!-- Os dados serão preenchidos aqui via carregar_tabela.asp -->
+        <!-- Os dados serão preenchidos aqui via tabela_turno -->
       </tbody>
     </table>
   </div>
@@ -137,9 +117,8 @@ Response.CodePage = 65001
           guaritaSelect.appendChild(option);
         });
       }
-
     });
-
+    
   </script>
   <script src="./static/js/ajax.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

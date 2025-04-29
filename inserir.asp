@@ -24,7 +24,8 @@ sql = "SELECT usuario_dss, supervisao "&_
 Set rs = conn.execute(sql)
 
 if not rs.EOF Then
-    Dim usuario_dss, supervisao
+    Dim usuario_dss, supervisao, horaAtual, dataHoje, dataAmanha
+
     usuario_dss = rs("usuario_dss")
     supervisao = rs("supervisao")
 
@@ -32,12 +33,15 @@ if not rs.EOF Then
 
     'Verifica se o funcionário já está cadastrado no turno atual
 
-    If turno = "manha" Then
-        condicaoHora = "data_hora_ra BETWEEN DateAdd('h', 6, Date()) AND DateAdd('h', 17, Date())"
-    Else
-        condicaoHora = "(data_hora_ra BETWEEN DateAdd('h', 18, Date()) AND DateAdd('s', -1, DateAdd('d', 1, Date())) OR data_hora_ra BETWEEN Date() AND DateAdd('h', 6, Date()))"
-    End If
+    horaAtual = Hour(Now())
+    dataHoje = Date()
+    dataAmanha = DateAdd("d", 1, dataHoje)
 
+    If turno = "manha" Then
+        condicaoHora = "(data_hora_ra >= #" & FormatDateTime(dataHoje, 2) & " 06:00:00# AND data_hora_ra <= #" & FormatDateTime(dataHoje, 2) & " 17:59:59#)"
+    Else
+        condicaoHora = "((data_hora_ra >= #" & FormatDateTime(dataHoje, 2) & " 18:00:00#) AND (data_hora_ra <= #" & FormatDateTime(dataAmanha, 2) & " 05:59:59#))"
+    End If
 
     sql = "SELECT COUNT(*) AS total "&_
     "FROM registros_apresentacao "&_
@@ -50,7 +54,7 @@ if not rs.EOF Then
         if torre <> supervisao and confirmado <> "1" then
             response.write("confirmar|" & supervisao)
         else
-            sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_ra, supervisao, local_ra) " & _
+            sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_ra, supervisao_ra, local_trabalho_ra) " & _
                 "VALUES ('" & usuario_dss & "', Now(), '" & torre & "', '" & guarita & "')"
             conn.execute(sql)
             

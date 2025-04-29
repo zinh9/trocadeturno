@@ -1,25 +1,21 @@
 <%
 
 Function turnoAtual()
-
     Dim hora
     hora = Hour(Now())
     If hora >= 6 And hora < 18 Then
-        turno_atual = "manha"
+        turnoAtual = "manha"
     Else
-        turno_atual = "noite"
+        turnoAtual = "noite"
     End If
-
-end Function
+End Function
     
 Function dentroDoTempo(registro)
-
     If DateDiff("n", registro, now()) <= 15 Then
-        dentro_do_tempo = "Concluído no prazo"
+        dentroDoTempo = "Concluído no prazo"
     Else
-        dentro_do_tempo = "Atrasado"
+        dentroDoTempo = "Atrasado"
     End If
-
 End Function
 
 %>
