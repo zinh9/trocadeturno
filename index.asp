@@ -10,6 +10,7 @@ Response.CodePage = 65001
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="60">
   <title>Controle de Apresentação</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -23,7 +24,7 @@ Response.CodePage = 65001
   </style>
 </head>
 
-<body style="background-color: rgb(55, 55, 55);">
+<body style="background-color: rgb(80, 80, 80);">
   <header class="bg-black text-white d-flex align-items-center justify-content-between py-3 px-3 mb-3">
     <img class="img-fluid me-4" style="height: 60px;" src="static/images/logo-vale.png" alt="VALE">
 
@@ -70,7 +71,7 @@ Response.CodePage = 65001
           </div>
         </form>
       </div>
-
+      
       <div class="col-auto ms-auto">
         <select id="torreSelect" class="form-select" required>
           <option selected disabled>Selecione a Torre</option>
@@ -88,9 +89,10 @@ Response.CodePage = 65001
       </div>
 
       <div class="col-auto">
-        <button id="filtrar" class="btn btn-secondary">
+        <button id="filtrarSupervisao" type="submit" class="btn btn-secondary">
           <i class="fas fa-filter"></i> Filtrar
         </button>
+      </div>
     </div>
 
     <div class="row">
@@ -106,7 +108,8 @@ Response.CodePage = 65001
         <tr>
           <th class="fs-3 fw-bold">Nome</th>
           <th class="fs-3 fw-bold">Matrícula</th>
-          <th class="fs-3 fw-bold"><i class="fas fa-house"></i></th>
+          <th class="fs-3 fw-bold">Local</th>
+          <th class="fs-3 fw-bold"><i class="fas fa-clock"></i></th>
           <th class="fs-3 fw-bold">DSS</th>
         </tr>
       </thead>
