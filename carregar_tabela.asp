@@ -2,62 +2,95 @@
 <!--#include file='utils.asp' -->
 <%
 
-Response.Charset = "UTF-8"
-Response.ContentType = "text/html"
+Dim torreFiltro, guaritaFiltro, rs, sqlT
+torreFiltro = Request.Form("torre")
+guaritaFiltro = Request.Form("guarita")
 
-Dim conn, turno, sql, rs, torre, guarita
+' Se não vier do formulário, tenta pela QueryString (desktop fixo)
+If torreFiltro = "" And qsTorre <> "" Then torreFiltro = qsTorre
+If guaritaFiltro = "" And qsGuarita <> "" Then guaritaFiltro = qsGuarita
 
 Set conn = getConexao()
+
+Dim turno
 turno = turnoAtual()
+             
+If torreFiltro <> "" And guaritaFiltro <> "" Then
+   If turno = "manha" Then
+      sqlT = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra " &_ 
+             "FROM registros_apresentacao ra INNER JOIN login_dss ld ON ra.usuario_dss = ld.usuario_dss " &_ 
+             "WHERE ra.local_trabalho_ra = '" & guaritaFiltro & "' AND ra.supervisao_ra = '" & torreFiltro & "' " &_ 
+             "AND (DatePart('h',ra.data_hora_ra) Between 6 And 17) AND DateValue(ra.data_hora_ra) = Date() " &_ 
+             "ORDER BY ra.data_hora_ra DESC;"
+   Else
+      sqlT = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra " &_ 
+             "FROM registros_apresentacao ra INNER JOIN login_dss ld ON ra.usuario_dss = ld.usuario_dss " &_ 
+             "WHERE ra.supervisao_ra = '" & torreFiltro & "' " &_ 
+             "AND ((DatePart('h',ra.data_hora_ra) >= 18 OR DatePart('h',ra.data_hora_ra) < 6)) AND DateValue(ra.data_hora_ra) = Date() " &_ 
+             "ORDER BY ra.data_hora_ra DESC;"
+   End If
+Else
+   ' Sem filtro: traz todos os registros do turno atual
+   If turno = "manha" Then
+      sqlT = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra " &_ 
+             "FROM registros_apresentacao ra INNER JOIN login_dss ld ON ra.usuario_dss = ld.usuario_dss " &_ 
+             "WHERE (DatePart('h',ra.data_hora_ra) Between 6 And 17) AND DateValue(ra.data_hora_ra) = Date() " &_ 
+             "ORDER BY ra.data_hora_ra DESC;"
+   Else
+      sqlT = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra " &_ 
+             "FROM registros_apresentacao ra INNER JOIN login_dss ld ON ra.usuario_dss = ld.usuario_dss " &_ 
+             "WHERE (DatePart('h',ra.data_hora_ra) >= 18 OR DatePart('h',ra.data_hora_ra) < 6) AND DateValue(ra.data_hora_ra) = Date() " &_ 
+             "ORDER BY ra.data_hora_ra DESC;"
+   End If
+End If
+             
+Set rs = conn.execute(sqlT)
+             
+Do While Not rs.EOF
+   Dim diffMinutes, horario
+   horario = TimeValue(rs("data_hora_ra"))
 
-torre = Request.form("torre")
-guarita = Request.form("guarita")
+   Response.Write "<tr>"
+      Response.Write "<td class='fs-3 fw-bold text-center w-25'>" & rs("nome") & "</td>"
+      Response.Write "<td class='fs-3 fw-bold text-center w-25'>" & rs("matricula") & "</td>"
+      Response.Write "<td class='fs-3 fw-bold text-center w-25'>" & horario & "</td>"
+                
+      diffMinutes = DateDiff("n", rs("data_hora_ra"), Now())
+      
+      ' Verifica na tabela ASSINATURA_DSS se há registro para esse usuário (na data atual)
+      Dim sqlAss, rsAss, assinaturaExiste
+      sqlAss = "SELECT COUNT(*) AS total FROM ASSINATURAS_DSS WHERE matricula = '" & rs("matricula") & "' AND DateValue(DATA_INSERT)=Date()"
 
-response.write torre & " - " & guarita
+      Set rsAss = conn.execute(sqlAss)
 
-if turno = "manha" and torre <> "" and guarita <> "" Then
-    sql = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra " &_
-    "FROM registros_apresentacao AS ra " &_
-    "INNER JOIN login_dss AS ld ON ra.usuario_dss = ld.usuario_dss " &_
-    "WHERE ra.local_trabalho_ra = '" & guarita & "' AND ra.supervisao_ra = '" & torre & "' " &_
-    "GROUP BY ld.detalhe, ld.usuario_dss, ra.data_hora_ra, DatePart('h',[ra].[data_hora_ra]), DateValue([ra].[data_hora_ra]) " &_
-    "HAVING (((DatePart('h',[ra].[data_hora_ra])) Between 6 And 17) AND ((DateValue([ra].[data_hora_ra]))=Date())) " &_
-    "ORDER BY ra.data_hora_ra DESC;"
-ElseIf turno = "noite" and torre <> "" then
-    sql = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra " &_
-    "FROM registros_apresentacao AS ra " &_
-    "INNER JOIN login_dss AS ld ON ra.usuario_dss = ld.usuario_dss " &_
-    "WHERE ra.supervisao_ra = '" & torre & "' " &_
-    "WHERE (DatePart('h', ra.data_hora_ra) >= 18 OR DatePart('h', ra.data_hora_ra) < 6) AND DateValue(ra.data_hora_ra) = Date() " &_
-    "ORDER BY ra.data_hora_ra DESC;"
-ElseIf turno = "manha" then 
-    sql = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra " &_
-    "FROM registros_apresentacao AS ra " &_
-    "INNER JOIN login_dss AS ld ON ra.usuario_dss = ld.usuario_dss " &_
-    "GROUP BY ld.detalhe, ld.usuario_dss, ra.data_hora_ra, DatePart('h',[ra].[data_hora_ra]), DateValue([ra].[data_hora_ra]) " &_
-    "HAVING (((DatePart('h',[ra].[data_hora_ra])) Between 6 And 17) AND ((DateValue([ra].[data_hora_ra]))=Date())) " &_
-    "ORDER BY ra.data_hora_ra DESC;"
-else 
-    sql = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra " &_
-    "FROM registros_apresentacao AS ra " &_
-    "INNER JOIN login_dss AS ld ON ra.usuario_dss = ld.usuario_dss " &_
-    "WHERE (DatePart('h', ra.data_hora_ra) >= 18 OR DatePart('h', ra.data_hora_ra) < 6) AND DateValue(ra.data_hora_ra) = Date() " &_
-    "ORDER BY ra.data_hora_ra DESC;"
-end if
+      If Not rsAss.EOF Then
+         assinaturaExiste = rsAss("total")
+      Else
+         assinaturaExiste = 0
+      End If
 
-Set rs = conn.execute(sql)
+      rsAss.close
 
-do while not rs.EOF
-    Response.Write "<tr>"
-        Response.Write "<td class='fs-3 fw-bold'>" & rs("nome") & "</td>"
-        Response.Write "<td class='fs-3 fw-bold'>" & rs("matricula") & "</td>"
-        Response.Write "<td class='fs-3 fw-bold'>" & rs("data_hora_ra") & "</td>"
-        Response.Write "<td class='fs-3 fw-bold'>DSS</td>"
-    Response.Write "</tr>"
-    rs.MoveNext
-loop
+      Set rsAss = Nothing
+                
+      If assinaturaExiste > 0 Then
+         ' Se o funcionário já assinou, mostra ícone verde
+         Response.Write "<td class='fs-3 fw-bold text-center w-25'><i class='fas fa-check-circle' style='color:green;'></i></td>"
+      Else
+         ' Se não assinou, segue com a lógica de tempo decorrido:
+         If diffMinutes <= 15 Then
+            ' Dentro do prazo: ícone laranja
+            Response.Write "<td class='fs-3 fw-bold text-center w-25'><i class='fas fa-check-circle' style='color:orange;'></i></td>"
+         Else
+            ' Ultrapassou 15 minutos: ícone vermelho
+            Response.Write "<td class='fs-3 fw-bold text-center w-25'><i class='fas fa-check-circle' style='color:red;'></i></td>"
+         End If
+      End If
+                
+   Response.Write "</tr>"
+   rs.MoveNext
+Loop
 
 conn.close
-set conn = Nothing
 
 %>
