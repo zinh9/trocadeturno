@@ -15,6 +15,7 @@ modoControle = Request.QueryString("controle") ' Se "controle=true", não exibe 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="60">
   <title>Controle de Apresentação</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"><link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +25,12 @@ modoControle = Request.QueryString("controle") ' Se "controle=true", não exibe 
     * { font-family: 'Oswald', sans-serif; }
   </style>
 </head>
+<<<<<<< HEAD
 <body style="background-color: rgb(85,85,85);">
+=======
+
+<body style="background-color: rgb(80, 80, 80);">
+>>>>>>> ba09cf19391aca6440a091e468d6d8592e1f34dc
   <header class="bg-black text-white d-flex align-items-center justify-content-between py-3 px-3 mb-3">
     <img class="img-fluid me-4" style="height: 60px;" src="static/images/logo-vale.png" alt="VALE">
     <div class="flex-grow-1 text-center">
@@ -89,6 +95,31 @@ modoControle = Request.QueryString("controle") ' Se "controle=true", não exibe 
           </div>
         </form>
       </div>
+<<<<<<< HEAD
+=======
+      
+      <div class="col-auto ms-auto">
+        <select id="torreSelect" class="form-select" required>
+          <option selected disabled>Selecione a Torre</option>
+          <option value="TORRE_A">TORRE_A</option>
+          <option value="TORRE_B">TORRE_B</option>
+          <option value="TORRE_C">TORRE_C</option>
+          <option value="TORRE_L">TORRE_L</option>
+        </select>
+      </div>
+
+      <div class="col-auto">
+        <select id="guaritaSelect" class="form-select" required>
+          <option selected disabled>Selecione a Guarita</option>
+        </select>
+      </div>
+
+      <div class="col-auto">
+        <button id="filtrarSupervisao" type="submit" class="btn btn-secondary">
+          <i class="fas fa-filter"></i> Filtrar
+        </button>
+      </div>
+>>>>>>> ba09cf19391aca6440a091e468d6d8592e1f34dc
     </div>
 
     <div class="row">
@@ -115,8 +146,54 @@ modoControle = Request.QueryString("controle") ' Se "controle=true", não exibe 
     </div>
   </div>
 
+<<<<<<< HEAD
   <!-- Inclui o arquivo de JavaScript com a lógica AJAX e dos filtros -->
   <script src="static/js/ajax.js"></script>
+=======
+  <div class="table-responsive mt-3">
+    <table class="table table-bordered table-hover table-striped table-dark table-sm">
+      <thead class="table-light text-center fs-3 fw-bold">
+        <tr>
+          <th class="fs-3 fw-bold">Nome</th>
+          <th class="fs-3 fw-bold">Matrícula</th>
+          <th class="fs-3 fw-bold">Local</th>
+          <th class="fs-3 fw-bold"><i class="fas fa-clock"></i></th>
+          <th class="fs-3 fw-bold">DSS</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaApresentacoes">
+        <!-- Os dados serão preenchidos aqui via carregar_tabela.asp -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const guaritasPorTorre = {
+      "TORRE_A": ["Guarita_7", "HT6"],
+      "TORRE_B": ["Guarita_2", "Guarita_3", "Guarita_4", "Guarita_5"],
+      "TORRE_C": ["Guarita_da_Rampa", "Guarita_do_Corte"],
+      "TORRE_L": ["Guarita_da_Torre_L"]
+    };
+
+    document.getElementById('torreSelect').addEventListener('change', function () {
+      const torre = this.value;
+      const guaritaSelect = document.getElementById('guaritaSelect');
+
+      guaritaSelect.innerHTML = '<option selected disabled>Selecione a Guarita</option>';
+      if (guaritasPorTorre[torre]) {
+        guaritasPorTorre[torre].forEach(g => {
+          const option = document.createElement('option');
+          option.value = g;
+          option.textContent = g;
+          guaritaSelect.appendChild(option);
+        });
+      }
+
+    });
+
+  </script>
+  <script src="./static/js/ajax.js"></script>
+>>>>>>> ba09cf19391aca6440a091e468d6d8592e1f34dc
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
