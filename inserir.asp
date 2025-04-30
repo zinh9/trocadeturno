@@ -50,14 +50,12 @@ if not rs.EOF Then
     set rs = conn.execute(sql)
 
     if rs("total") = "0" Then
-
-        if torre <> supervisao and confirmado <> "1" then
+        if (torre <> supervisao) And (confirmado <> "1") then
             response.write("confirmar|" & supervisao)
         else
-            sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_ra, supervisao_ra, local_trabalho_ra) " & _
-                "VALUES ('" & usuario_dss & "', Now(), '" & torre & "', '" & guarita & "')"
+            sql = "INSERT INTO registros_apresentacao (data_hora_ra, local_trabalho_ra, supervisao_ra, usuario_dss) "&_
+            "VALUES (Now(), '" & guarita & "', '" & torre & "', '" & usuario_dss &"')"
             conn.execute(sql)
-            
             response.write "ok"
         end if
     Else
