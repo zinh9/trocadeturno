@@ -18,4 +18,8 @@ Function dentroDoTempo(registro)
     End If
 End Function
 
+Function formatDataHoraUSA(data, hora)
+    formatDataHoraUSA = "#" & Month(data) & "/" & Day(data) & "/" & Year(data) & " " & hora & "#"
+End Function
+
 %>

@@ -1,91 +1,95 @@
 <%@ Language="VBScript" %>
-<!--#include file="conexao.asp" -->
+<!--#include file='conexao.asp' -->
+<!--#include file='carregar_tabela.asp' -->
 <%
-Response.Charset = "UTF-8"
-Response.CodePage = 65001
+  Response.Charset = "UTF-8"
+  Response.CodePage = 65001
 
-' Parâmetros da query string
-qsTorre = Request.QueryString("torre")
-qsGuarita = Request.QueryString("guarita")
-modoControle = Request.QueryString("controle") ' Se "controle=true", não exibe o formulário de apresentação.
-
+  ' Pega os parâmetros da query string
+  qsTorre = Request.QueryString("torre")
+  qsGuarita = Request.QueryString("guarita")
 %>
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="60">
   <title>Controle de Apresentação</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"><link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Oswald:wght@200..700&family=Parisienne&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
   <style>
-    * { font-family: 'Oswald', sans-serif; }
+    * {
+      font-family: 'Oswald', sans-serif;
+    }
+
+    .btn-aguardando {
+      background-color: #f0ad4e;
+      color: white;
+    }
+
+    .btn-atrasado {
+      background-color: #d9534f;
+      color: white;
+    }
   </style>
 </head>
-<body style="background-color: rgb(85,85,85);">
+
+<body style="background-color: rgb(80, 80, 80);">
   <header class="bg-black text-white d-flex align-items-center justify-content-between py-3 px-3 mb-3">
     <img class="img-fluid me-4" style="height: 60px;" src="static/images/logo-vale.png" alt="VALE">
+
     <div class="flex-grow-1 text-center">
       <div class="fs-1 fw-bold">SISTEMA TROCA DE TURNO - OP1</div>
     </div>
+
     <div class="fs-6 text-end" style="white-space: nowrap;">
-      Última atualização:<br>
+      Última atualização: <br>
       <%
-        Dim data_ultima_atualizacao, sqlU
+        Dim data_ultima_atualizacao, sql
         Set conn = getConexao()
-        sqlU = "SELECT TOP 1 data_hora_ra FROM registros_apresentacao ORDER BY data_hora_ra DESC"
-        Set data_ultima_atualizacao = conn.execute(sqlU)
+        sql = "SELECT TOP 1 data_hora_ra FROM registros_apresentacao ORDER BY data_hora_ra DESC"
+        Set data_ultima_atualizacao = conn.execute(sql)
+
         If Not data_ultima_atualizacao.EOF Then
           Response.Write(FormatDateTime(data_ultima_atualizacao("data_hora_ra"), vbShortDate) & " " & FormatDateTime(data_ultima_atualizacao("data_hora_ra"), vbLongTime))
         Else
           Response.Write("--/--/-- --:--:--")
         End If
-        conn.close
       %>
     </div>
   </header>
 
   <div class="container-fluid px-4">
-    <!-- Seção para registro de matrícula: exibida somente se não for o modo controle -->
-    <% If LCase(modoControle) <> "true" Then %>
-      <div class="row mb-3">
-        <div class="col-md-auto">
-          <form method="post" id="formApresentacao">
-            <div class="row g-3 align-items-center">
-              <div class="col-auto">
-                <input type="text" id="matricula" name="matricula" class="form-control" placeholder="Digite sua matrícula" required>
-              </div>
-              <div class="col-auto" id="mensagem"></div>
-            </div>
-          </form>
-        </div>
-      </div>
-    <% End If %>
     <div class="row mb-3">
       <div class="col-md-auto">
-        <form id="formFiltros">
+        <form method="post" id="formInserir">
           <div class="row g-3 align-items-center">
             <div class="col-auto">
+              <input type="text" id="matricula" name="matricula" class="form-control" placeholder="Digite sua matrícula" required>
+            </div>
+            <div class="col-auto">
               <select id="torreSelect" name="torre" class="form-select" required>
-                <option value="" disabled selected>Filtrar por Torre</option>
-                <option value="TORRE_A">TORRE_A</option>
-                <option value="TORRE_B">TORRE_B</option>
-                <option value="TORRE_C">TORRE_C</option>
-                <option value="TORRE_L">TORRE_L</option>
+                <option value="<%= qsTorre %>" selected><%= qsTorre %></option>
               </select>
             </div>
             <div class="col-auto">
               <select id="guaritaSelect" name="guarita" class="form-select" required>
-                <option value="" disabled selected>Filtrar por Guarita</option>
+                <option value="<%= qsGuarita %>" selected><%= qsGuarita %></option>
               </select>
             </div>
             <div class="col-auto">
-              <button type="button" class="btn btn-primary" id="btnFiltrar">
-                <i class="fas fa-filter"></i> Filtrar
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-check"></i> Apresentar
               </button>
             </div>
+            <div class="col-auto" id="mensagem"></div>
           </div>
         </form>
       </div>
@@ -96,27 +100,83 @@ modoControle = Request.QueryString("controle") ' Se "controle=true", não exibe 
         <h5 class="card-title h1 text-white mt-4">Funcionários Apresentados</h5>
       </div>
     </div>
-
-    <!-- Tabela dos registros -->
-    <div class="table-responsive mt-3">
-      <table class="table table-bordered table-hover table-striped table-dark table-sm">
-        <thead class="table-light text-center fs-3 fw-bold">
-          <tr>
-            <th class="fs-3 fw-bold">Nome</th>
-            <th class="fs-3 fw-bold">Matrícula</th>
-            <th class="fs-3 fw-bold"><i class="fas fa-house"></i></th>
-            <th class="fs-3 fw-bold">DSS</th>
-          </tr>
-        </thead>
-        <tbody id="tabelaApresentacoes">
-          <!-- Os registros serão carregados via AJAX -->
-        </tbody>
-      </table>
-    </div>
   </div>
 
-  <!-- Inclui o arquivo de JavaScript com a lógica AJAX e dos filtros -->
-  <script src="static/js/ajax.js"></script>
+  <div class="table-responsive mt-3">
+    <table class="table table-bordered table-hover table-striped table-dark table-sm">
+      <thead class="table-light text-center fs-3 fw-bold">
+        <tr>
+          <th>Nome</th>
+          <th>Matrícula</th>
+          <th>Local</th>
+          <th><i class="fas fa-clock"></i></th>
+          <th>Pronto ?</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaApresentacoes">
+        <%= carregarTabela(qsTorre, qsGuarita) %>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    document.getElementById("formInserir").addEventListener("submit", function (event) {
+      event.preventDefault(); // Impede o envio padrão do formulário
+      const formData = new FormData(this);
+
+      const matricula = document.getElementById("matricula").value.trim();
+      const torre = document.getElementById("torreSelect").value.trim();
+      const guarita = document.getElementById("guaritaSelect").value.trim();
+
+      const params = new URLSearchParams();
+      params.append("matricula", matricula);
+      params.append("torre", torre);
+      params.append("guarita", guarita);
+
+      fetch("inserir.asp", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: params.toString()
+      })
+      .then(response => response.text())
+      .then(data => {
+        data = data.trim();
+
+        if (data === "ok") {
+          setTimeout(() => {
+            document.getElementById("mensagem").innerHTML = "<div class='alert alert-success'>Funcionário apresentado com sucesso!</div>";
+          }, 1000);
+        } else if (data.indexOf("confirmar|") === 0) {
+          let supervisaoOriginal = data.split("|")[1];
+          if (confirm("Você está tentando se apresentar em outra supervisão. Sua supervisão original é: " + supervisaoOriginal + ".\nDeseja continuar?")) {
+            params.append("confirmado", "1");
+            fetch('inserir.asp', {
+              method: 'POST',
+              headers: {"Content-Type": "application/x-www-form-urlencoded"},
+              body: params.toString()
+            })
+            .then(response => response.text())
+            .then(data => {
+              if (data.trim() === "ok") {
+                alert("Apresentação registrada com sucesso!");
+                window.location.reload();
+              } else {
+                alert("Erro ao registrar: " + data);
+              }
+            });
+          }
+        } else {
+          alert("Erro ao registrar: " + data);
+        }
+      })
+      .catch(error => {
+        alert("Erro na requisição: " + error);
+      });
+    });
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

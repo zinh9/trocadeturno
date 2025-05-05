@@ -1,73 +1,68 @@
-<!--#include file='conexao.asp' -->
-<!--#include file='utils.asp' -->
+<%@ Language="VBScript" %>
+<!--#include file="conexao.asp" -->
+<!--#include file="utils.asp" -->
 <%
-
-Dim matricula, torre, guarita, conn, rs, turno, sql, confirmado
-
-Set conn = getConexao()
-
-matricula = Request.form("matricula")
-torre = Request.form("torre")
-guarita = Request.form("guarita")
-
-if Request.form("confirmado") = "" then
-    confirmado = "0"
-else
-    confirmado = Request.form("confirmado")
-end if
-
-'Verifica se o funcionário já está cadastrado
-sql = "SELECT usuario_dss, supervisao "&_
-"FROM login_dss " &_
-"WHERE usuario_dss = '" & matricula & "'"
-
-Set rs = conn.execute(sql)
-
-if not rs.EOF Then
-    Dim usuario_dss, supervisao, horaAtual, dataHoje, dataAmanha
-
-    usuario_dss = rs("usuario_dss")
-    supervisao = rs("supervisao")
-
-    turno = turnoAtual()
-
-    'Verifica se o funcionário já está cadastrado no turno atual
-
-    horaAtual = Hour(Now())
-    dataHoje = Date()
-    dataAmanha = DateAdd("d", 1, dataHoje)
-
-    If turno = "manha" Then
-        condicaoHora = "(data_hora_ra >= #" & FormatDateTime(dataHoje, 2) & " 06:00:00# AND data_hora_ra <= #" & FormatDateTime(dataHoje, 2) & " 17:59:59#)"
+' Se o formulário foi enviado via POST, processa a inserção
+If Request.ServerVariables("REQUEST_METHOD") = "POST" Then
+    Dim matricula, torre, guarita, confirmado, sql, rs, turno, horaAtual, dataHoje, dataAmanha, condicaoHora, supervisao, usuario_dss
+    
+    ' Obtém os valores do formulário
+    matricula = Request.Form("matricula")
+    torre = Request.Form("torre")
+    guarita = Request.Form("guarita")
+    
+    ' Verifica se o confirmado para registro em outra supervisão foi enviado (se confirmado = 1, então não pede confirmação)
+    If Request.Form("confirmado") = "" Then
+        confirmado = "0"
     Else
-        condicaoHora = "((data_hora_ra >= #" & FormatDateTime(dataHoje, 2) & " 18:00:00#) AND (data_hora_ra <= #" & FormatDateTime(dataAmanha, 2) & " 05:59:59#))"
+        confirmado = Request.Form("confirmado")
     End If
 
-    sql = "SELECT COUNT(*) AS total "&_
-    "FROM registros_apresentacao "&_
-    "WHERE usuario_dss = '" & usuario_dss & "' "&_
-    "AND " & condicaoHora
-    set rs = conn.execute(sql)
+    Set conn = getConexao()
 
-    if rs("total") = "0" Then
+    'Verifica se o funcionário está cadastrado em login_dss
+    sql = "SELECT usuario_dss, supervisao FROM login_dss WHERE usuario_dss = '" & matricula & "'"
+    Set rs = conn.execute(sql)
 
-        if torre <> supervisao and confirmado <> "1" then
-            response.write("confirmar|" & supervisao)
-        else
-            sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_ra, supervisao_ra, local_trabalho_ra) " & _
-                "VALUES ('" & usuario_dss & "', Now(), '" & torre & "', '" & guarita & "')"
-            conn.execute(sql)
-            
-            response.write "ok"
-        end if
+    If Not rs.EOF Then
+        usuario_dss = rs("usuario_dss")
+        supervisao = rs("supervisao")
+        turno = turnoAtual()
+
+        horaAtual = Hour(Now())
+        dataHoje = Date()
+        dataAmanha = DateAdd("d", 1, dataHoje)
+
+        If turno = "manha" Then
+            condicaoHora = "(data_hora_ra >= " & formatDataHoraUSA(dataHoje, "06:00:00") & " AND data_hora_ra <= " & formatDataHoraUSA(dataHoje, "17:59:59") & ")"
+        Else
+            condicaoHora = "((data_hora_ra >= " & formatDataHoraUSA(dataHoje, "18:00:00") & ") AND (data_hora_ra <= " & formatDataHoraUSA(dataAmanha, "05:59:59") & "))"
+        End If
+
+        ' Verifica se já houve registro neste turno para o funcionário
+        sql = "SELECT COUNT(*) AS total FROM registros_apresentacao WHERE usuario_dss = '" & usuario_dss & "' AND " & condicaoHora
+        Set rs = conn.execute(sql)
+
+        If rs("total") = "0" Then
+            if (torre <> supervisao) And (confirmado <> "1") then
+                response.write("confirmar|" & supervisao)
+            else    
+                sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_ra, supervisao_ra, local_trabalho_ra) " & _
+                    "VALUES ('" & usuario_dss & "', Now(), '" & torre & "', '" & guarita & "')"
+                conn.execute(sql)
+                Response.Write "ok"
+            end if
+            ' Após a inserção, redireciona para a mesma página com os filtros na query string para evitar reenvio
+            'Response.Redirect "index.asp?torre=" & Server.URLEncode(torre) & "&guarita=" & Server.URLEncode(guarita)
+            Response.End
+        Else
+            Response.Write "Funcionário já cadastrado no turno atual."
+            Response.End
+        End If
     Else
-        response.write("Funcionário já cadastrado no turno atual.")
-    end if
-Else
-    response.write("Funcionário não encontrado.")
-end if
-
-conn.close
-Set conn = Nothing
-
+        Response.Write "Funcionário não encontrado."
+        Response.End
+    End If
+    conn.close
+End If
 %>
