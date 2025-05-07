@@ -2,17 +2,16 @@
 <!--#include file='conexao.asp' -->
 <!--#include file='carregar_tabela.asp' -->
 <%
-  Response.Charset = "UTF-8"
-  Response.CodePage = 65001
+Response.Charset = "UTF-8"
+Response.CodePage = 65001
 
-  ' Pega os parâmetros da query string ou do POST (aqui, de um formulário)
-  Dim torreFiltro, qsGuarita
+Dim torreFiltro
 
-  If Request.QueryString("torre") <> "" Then
-    torreFiltro = Request.QueryString("torre")
-  else
-    torreFiltro = Request.Form("torre")
-  End If
+if request.QueryString("torre") <> "" then
+  torreFiltro = request.QueryString("torre")
+else
+  torreFiltro = Request.Form("torre")
+end if
 
 %>
 <!DOCTYPE html>
@@ -21,7 +20,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Atualiza a página a cada minuto -->
-  <meta http-equiv="refresh" content="60; URL=ccp.asp?torre=<%=Server.URLEncode(torreFiltro)%>">
+  <meta http-equiv="refresh" content="20; URL=ccp.asp?torre=<%=Server.URLEncode(torreFiltro)%>">
   <title>Controle de Apresentação</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -45,21 +44,22 @@
 <body style="background-color: rgb(80, 80, 80);">
   <header class="bg-black text-white d-flex align-items-center justify-content-between py-3 px-3 mb-3">
     <img class="img-fluid me-4" style="height: 60px;" src="static/images/logo-vale.png" alt="VALE">
+    
     <div class="flex-grow-1 text-center">
-      <div class="fs-1 fw-bold">SISTEMA TROCA DE TURNO - OP1</div>
+      <div class="fs-1 fw-bold">
+        <span class="text-danger">CCP</span> | SISTEMA TROCA DE TURNO - OP1
+      </div>
     </div>
+
     <div class="fs-6 text-end" style="white-space: nowrap;">
       Última atualização: <br>
       <%
         Dim conn, data_ultima_atualizacao, sql
-
         Set conn = getConexao()
-
-        sql = "SELECT TOP 1 data_hora_ra FROM registros_apresentacao ORDER BY data_hora_ra DESC"
+        sql = "SELECT TOP 1 data_hora_apresentacao FROM registros_apresentacao ORDER BY data_hora_apresentacao DESC"
         Set data_ultima_atualizacao = conn.Execute(sql)
-
         If Not data_ultima_atualizacao.EOF Then
-          Response.Write FormatDateTime(data_ultima_atualizacao("data_hora_ra"), vbShortDate) & " " & FormatDateTime(data_ultima_atualizacao("data_hora_ra"), vbLongTime)
+          Response.Write FormatDateTime(data_ultima_atualizacao("data_hora_apresentacao"), vbShortDate) & " " & FormatDateTime(data_ultima_atualizacao("data_hora_apresentacao"), vbLongTime)
         Else
           Response.Write "--/--/-- --:--:--"
         End If
@@ -96,28 +96,27 @@
     <!-- Título -->
     <div class="row">
       <div class="col-12">
-        <h5 class="card-title h1 text-white mt-4">Funcionários Apresentados</h5>
+        <h5 class="card-title h1 text-white mt-4">Colaboradores Apresentados</h5>
       </div>
     </div>
   </div>
     <!-- Tabela com os dados filtrados -->
-  <div class="table-responsive mt-3">
-    <table class="table table-bordered table-hover table-striped table-dark table-sm">
-      <thead class="table-light text-center fs-3 fw-bold">
-        <tr>
-          <th>Nome</th>
-          <th>Matrícula</th>
-          <th>Local</th>
-          <th><i class="fas fa-clock"></i></th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="tabelaApresentacoes">
-        <%= carregarTabelaCCP(torreFiltro) %>
-      </tbody>
-    </table>
-  </div>
-
+    <div class="table-responsive mt-3">
+      <table class="table table-bordered table-hover table-striped table-dark table-sm">
+        <thead class="table-light text-center fs-3 fw-bold">
+          <tr>
+            <th>Nome</th>
+            <th><i class="fas fa-house"></i> Local</th>
+            <th><i class="fas fa-clock"></i> Apresentação</th>
+            <th><i class="fas fa-clock"></i> Prontidão</th>
+            <th>Chamada</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaApresentacoes">
+          <%= carregarTabelaCCP(torreFiltro) %>
+        </tbody>
+      </table>
+    </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
