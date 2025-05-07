@@ -4,7 +4,7 @@
 <%
 ' Se o formulário foi enviado via POST, processa a inserção
 If Request.ServerVariables("REQUEST_METHOD") = "POST" Then
-    Dim matricula, torre, guarita, confirmado, sql, rs, turno, horaAtual, dataHoje, dataAmanha, condicaoHora, supervisao, usuario_dss
+    Dim matricula, torre, guarita, confirmado, sql, rs, turno, horaAtual, dataHoje, dataAmanha, condicaoHora, supervisao, usuario_dss, turno_funcionario
     
     ' Obtém os valores do formulário
     matricula = Request.Form("matricula")
@@ -35,8 +35,10 @@ If Request.ServerVariables("REQUEST_METHOD") = "POST" Then
 
         If turno = "manha" Then
             condicaoHora = "(data_hora_ra >= " & formatDataHoraUSA(dataHoje, "06:00:00") & " AND data_hora_ra <= " & formatDataHoraUSA(dataHoje, "17:59:59") & ")"
+            turno_funcionario = "06x18"
         Else
             condicaoHora = "((data_hora_ra >= " & formatDataHoraUSA(dataHoje, "18:00:00") & ") AND (data_hora_ra <= " & formatDataHoraUSA(dataAmanha, "05:59:59") & "))"
+            turno_funcionario = "18x06"
         End If
 
         ' Verifica se já houve registro neste turno para o funcionário
@@ -47,13 +49,11 @@ If Request.ServerVariables("REQUEST_METHOD") = "POST" Then
             if (torre <> supervisao) And (confirmado <> "1") then
                 response.write("confirmar|" & supervisao)
             else    
-                sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_ra, supervisao_ra, local_trabalho_ra) " & _
-                    "VALUES ('" & usuario_dss & "', Now(), '" & torre & "', '" & guarita & "')"
+                sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_ra, supervisao_ra, local_trabalho_ra, turno_funcionario) " & _
+                    "VALUES ('" & usuario_dss & "', Now(), '" & torre & "', '" & guarita & "', '" & turno_funcionario & "')"
                 conn.execute(sql)
                 Response.Write "ok"
             end if
-            ' Após a inserção, redireciona para a mesma página com os filtros na query string para evitar reenvio
-            'Response.Redirect "index.asp?torre=" & Server.URLEncode(torre) & "&guarita=" & Server.URLEncode(guarita)
             Response.End
         Else
             Response.Write "Funcionário já cadastrado no turno atual."

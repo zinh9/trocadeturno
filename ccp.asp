@@ -7,8 +7,13 @@
 
   ' Pega os parâmetros da query string ou do POST (aqui, de um formulário)
   Dim torreFiltro, qsGuarita
-  torreFiltro = Request.Form("torre")
-  qsGuarita = Request.QueryString("guarita")
+
+  If Request.QueryString("torre") <> "" Then
+    torreFiltro = Request.QueryString("torre")
+  else
+    torreFiltro = Request.Form("torre")
+  End If
+
 %>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -16,7 +21,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Atualiza a página a cada minuto -->
-  <meta http-equiv="refresh" content="60">
+  <meta http-equiv="refresh" content="60; URL=ccp.asp?torre=<%=Server.URLEncode(torreFiltro)%>">
   <title>Controle de Apresentação</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -47,9 +52,12 @@
       Última atualização: <br>
       <%
         Dim conn, data_ultima_atualizacao, sql
+
         Set conn = getConexao()
+
         sql = "SELECT TOP 1 data_hora_ra FROM registros_apresentacao ORDER BY data_hora_ra DESC"
         Set data_ultima_atualizacao = conn.Execute(sql)
+
         If Not data_ultima_atualizacao.EOF Then
           Response.Write FormatDateTime(data_ultima_atualizacao("data_hora_ra"), vbShortDate) & " " & FormatDateTime(data_ultima_atualizacao("data_hora_ra"), vbLongTime)
         Else
@@ -68,6 +76,7 @@
             <div class="col-auto">
               <select class="form-select" name="torre" id="torre" required>
                 <option value="" disabled <% If torreFiltro = "" Then Response.Write "selected" %>>Selecione a Supervisão</option>
+                <option value="" <% If torreFiltro = "" Then Response.Write "selected" %>>Todos</option>
                 <option value="TORRE_A" <% If torreFiltro = "TORRE_A" Then Response.Write "selected" %>>TORRE A</option>
                 <option value="TORRE_B" <% If torreFiltro = "TORRE_B" Then Response.Write "selected" %>>TORRE B</option>
                 <option value="TORRE_C" <% If torreFiltro = "TORRE_C" Then Response.Write "selected" %>>TORRE C</option>
@@ -90,25 +99,25 @@
         <h5 class="card-title h1 text-white mt-4">Funcionários Apresentados</h5>
       </div>
     </div>
-
-    <!-- Tabela com os dados filtrados -->
-    <div class="table-responsive mt-3">
-      <table class="table table-bordered table-hover table-striped table-dark table-sm">
-        <thead class="table-light text-center fs-3 fw-bold">
-          <tr>
-            <th>Nome</th>
-            <th>Matrícula</th>
-            <th>Local</th>
-            <th><i class="fas fa-clock"></i></th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="tabelaApresentacoes">
-          <%= carregarTabelaCCP(torreFiltro) %>
-        </tbody>
-      </table>
-    </div>
   </div>
+    <!-- Tabela com os dados filtrados -->
+  <div class="table-responsive mt-3">
+    <table class="table table-bordered table-hover table-striped table-dark table-sm">
+      <thead class="table-light text-center fs-3 fw-bold">
+        <tr>
+          <th>Nome</th>
+          <th>Matrícula</th>
+          <th>Local</th>
+          <th><i class="fas fa-clock"></i></th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaApresentacoes">
+        <%= carregarTabelaCCP(torreFiltro) %>
+      </tbody>
+    </table>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

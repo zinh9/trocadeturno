@@ -1,31 +1,27 @@
 <%@ Language = "VBScript" %>
 <!--#include file='conexao.asp' -->
 <%
-
-Dim matricula, status_ra, sql, rs, conn
-matricula = Request.form("matricula")
-status_ra = Request.form("status")
-supervisao = Request.form("supervisao_ra")
-local_trabalho_ra = Request.form("local_trabalho_ra")
+Dim matricula, status_ra, sql, conn
+matricula = Request.Form("matricula")
+status_ra = Request.Form("status")
+supervisao = Request.Form("supervisao_ra")
+local_trabalho_ra = Request.Form("local_trabalho_ra")
 Set conn = getConexao()
 
-if status_ra = "Pronto" Then
-    sql = "UPDATE registros_apresentacao "&_
-    "SET status_tempo_ra = 'Pronto' "&_
-    "WHERE usuario_dss = '" & matricula & "' "&_
-    "AND DateValue(data_hora_ra) = Date()"
-    conn.execute(sql)
-else
-    sql = "UPDATE registros_apresentacao "&_
-    "SET status_tempo_ra = 'Atrasado' "&_
-    "WHERE usuario_dss = '" & matricula & "' "&_
-    "AND DateValue(data_hora_ra) = Date()"
-    conn.execute(sql)
-end if
+If status_ra = "Pronto" Then
+    sql = "UPDATE registros_apresentacao " & _
+          "SET status_tempo_ra = 'Pronto', data_hora_prontidao_ra = Date() " & _
+          "WHERE usuario_dss = '" & matricula & "' " & _
+          "AND DateValue(data_hora_ra) = Date()"
+Else
+    sql = "UPDATE registros_apresentacao " & _
+          "SET status_tempo_ra = 'Pronto com atraso', data_hora_prontidao_ra = Date() " & _
+          "WHERE usuario_dss = '" & matricula & "' " & _
+          "AND DateValue(data_hora_ra) = Date()"
+End If
 
-conn.close
+conn.Execute(sql)
+conn.Close
 
-Response.Redirect "index.asp?torre=" & supervisao & "&guarita=" & local_trabalho_ra
-
-
+Response.Redirect "index.asp?torre=" & Server.URLEncode(supervisao) & "&guarita=" & Server.URLEncode(local_trabalho_ra)
 %>
