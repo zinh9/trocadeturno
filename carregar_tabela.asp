@@ -1,6 +1,7 @@
 <!--#include file="conexao.asp" -->
 <!--#include file="utils.asp" -->
 <%
+Response.Charset = "UTF-8"
 
 Function carregarTabela(torreFiltro, guaritaFiltro)
     Dim conn, rs, sql, turno
@@ -8,42 +9,41 @@ Function carregarTabela(torreFiltro, guaritaFiltro)
     turno = turnoAtual()
 
     ' Monta a query base
-    sql = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra, ra.supervisao_ra, ra.local_trabalho_ra " & _
+    sql = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_apresentacao, ra.supervisao_ra, ra.local_trabalho_ra, ra.data_hora_prontidao_ra " & _
           "FROM registros_apresentacao ra INNER JOIN login_dss ld ON ra.usuario_dss = ld.usuario_dss " & _
-          "WHERE DateValue(ra.data_hora_ra) = Date() "
+          "WHERE DateValue(ra.data_hora_apresentacao) = Date() "
 
     If torreFiltro <> "" Then
         sql = sql & "AND ra.supervisao_ra = '" & torreFiltro & "' "
     End If
+    
     If guaritaFiltro <> "" Then
         sql = sql & "AND ra.local_trabalho_ra = '" & guaritaFiltro & "' "
     End If
 
     If turno = "manha" Then
-        sql = sql & "AND DatePart('h', ra.data_hora_ra) BETWEEN 6 AND 17 "
+        sql = sql & "AND DatePart('h', ra.data_hora_apresentacao) BETWEEN 6 AND 17 "
     Else
-        sql = sql & "AND (DatePart('h', ra.data_hora_ra) >= 18 OR DatePart('h', ra.data_hora_ra) < 6) "
+        sql = sql & "AND (DatePart('h', ra.data_hora_apresentacao) >= 18 OR DatePart('h', ra.data_hora_apresentacao) < 6) "
     End If
 
-    sql = sql & "ORDER BY ra.data_hora_ra DESC;"
+    sql = sql & "ORDER BY ra.data_hora_apresentacao DESC;"
     
     Set rs = conn.Execute(sql)
 
     Do While Not rs.EOF
-        Dim horario, diffMinutes
-        horario = TimeValue(rs("data_hora_ra"))
-        diffMinutes = DateDiff("n", rs("data_hora_ra"), Now())
+        Dim horarioApresentacao, diffMinutes, horarioProntidao
+        horarioApresentacao = TimeValue(rs("data_hora_apresentacao"))
+        diffMinutes = DateDiff("n", rs("data_hora_apresentacao"), Now())
 
         Response.Write "<tr>"
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & rs("nome") & "</td>"
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & rs("matricula") & "</td>"
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & rs("supervisao_ra") & " - " & rs("local_trabalho_ra") & "</td>"
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & horario & "</td>"
+        Response.Write "  <td class='fs-4 fw-bold text-center w-25'>" & rs("nome") & "</td>"
+        Response.Write "  <td class='fs-4 fw-bold text-center w-25'>" & rs("supervisao_ra") & " - " & rs("local_trabalho_ra") & "</td>"
+        Response.Write "  <td class='fs-4 fw-bold text-center w-25'>" & horarioApresentacao & "</td>"
 
-        ' --- Lógica do botão de prontidão ---
         Dim desiredStatus, buttonClass, formButton
         Dim rsAss, sqlAss, assinatura
-        sqlAss = "SELECT COUNT(*) AS total FROM ASSINATURAS_DSS WHERE usuario_dss = '" & rs("matricula") & "' AND DateValue(DATA_INSERT) = Date()"
+        sqlAss = "SELECT COUNT(*) AS total FROM ASSINATURA_DSS WHERE usuario_dss = '" & rs("matricula") & "' AND DateValue(DATA_INSERT) = Date()"
         Set rsAss = conn.Execute(sqlAss)
         assinatura = 0
         If Not rsAss.EOF Then
@@ -55,10 +55,10 @@ Function carregarTabela(torreFiltro, guaritaFiltro)
             ' O funcionário assinou o DSS
             If diffMinutes <= 15 Then
                 desiredStatus = "Pronto"
-                buttonClass = "btn btn-success"  ' Verde
+                buttonClass = "btn btn-success" 
             Else
                 desiredStatus = "Pronto com atraso"
-                buttonClass = "btn btn-warning"  ' Laranja
+                buttonClass = "btn btn-success" 
             End If
             formButton = "<form method='post' action='atualizar_status.asp'>" & _
                          "<input type='hidden' name='matricula' value='" & rs("matricula") & "'>" & _
@@ -69,10 +69,10 @@ Function carregarTabela(torreFiltro, guaritaFiltro)
         Else
             ' Não há assinatura
             If diffMinutes <= 15 Then
-                formButton = "<button class='btn btn-aguardando' disabled>Aguardando...</button>"
+                formButton = "<button class='btn btn-aguardando' disabled>Aguardando DSS...</button>"
             Else
                 desiredStatus = "Pronto com atraso"
-                buttonClass = "btn btn-warning"
+                buttonClass = "btn btn-danger"
                 formButton = "<form method='post' action='atualizar_status.asp'>" & _
                              "<input type='hidden' name='matricula' value='" & rs("matricula") & "'>" & _
                              "<input type='hidden' name='supervisao_ra' value='" & rs("supervisao_ra") & "'>" & _
@@ -82,22 +82,25 @@ Function carregarTabela(torreFiltro, guaritaFiltro)
             End If
         End If
 
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & formButton & "</td>"
+        Response.Write "  <td class='fs-4 fw-bold text-center w-10'>" & formButton & "</td>"
 
         ' --- Lógica do ícone de status ---
-        Dim rsStatus, sqlStatus, currentStatus, icon
-        sqlStatus = "SELECT status_tempo_ra FROM registros_apresentacao WHERE usuario_dss = '" & rs("matricula") & "' AND DateValue(data_hora_ra) = Date()"
+        Dim rsStatus, sqlStatus, currentStatus
+        
+        sqlStatus = "SELECT status_funcionario FROM registros_apresentacao WHERE usuario_dss = '" & rs("matricula") & "' AND DateValue(data_hora_apresentacao) = Date()"
         Set rsStatus = conn.Execute(sqlStatus)
+
+        horarioProntidao = ""
         currentStatus = ""
         If Not rsStatus.EOF Then
-            currentStatus = rsStatus("status_tempo_ra")
+            currentStatus = rsStatus("status_funcionario")
         End If
         rsStatus.Close
 
         If currentStatus = "Pronto" Then
-            icon = "<i class='fas fa-check-circle text-success'></i>"
+            horarioProntidao = "<span class='text-success'>" & TimeValue(rs("data_hora_prontidao_ra")) & "</span>"
         ElseIf currentStatus = "Pronto com atraso" Then
-            icon = "<i class='fas fa-check-circle text-warning'></i>"
+            horarioProntidao = "<span class='text-danger'>" & TimeValue(rs("data_hora_prontidao_ra")) & "</span>"
         Else
             If diffMinutes <= 15 Then
                 icon = "<i class='fas fa-clock text-warning'></i>"
@@ -106,7 +109,7 @@ Function carregarTabela(torreFiltro, guaritaFiltro)
             End If
         End If
 
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & icon & "</td>"
+        Response.Write "  <td class='fs-4 fw-bold text-center w-25'>" & horarioProntidao & "</td>"
         Response.Write "</tr>"
 
         rs.MoveNext
@@ -121,47 +124,64 @@ Function carregarTabelaCCP(torreFiltro)
     Set conn = getConexao()
     turno = turnoAtual()
 
-    sql = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_ra, ra.supervisao_ra, ra.local_trabalho_ra, ra.status_tempo_ra " & _
+    sql = "SELECT ld.detalhe AS nome, ld.usuario_dss AS matricula, ra.data_hora_apresentacao, ra.supervisao_ra, ra.local_trabalho_ra, ra.data_hora_prontidao_ra " & _
           "FROM registros_apresentacao ra INNER JOIN login_dss ld ON ra.usuario_dss = ld.usuario_dss " & _
-          "WHERE DateValue(ra.data_hora_ra) = Date() "
+          "WHERE DateValue(ra.data_hora_apresentacao) = Date() "
 
     If torreFiltro <> "" Then
         sql = sql & "AND ra.supervisao_ra = '" & torreFiltro & "' "
     End If
 
     If turno = "manha" Then
-        sql = sql & "AND DatePart('h', ra.data_hora_ra) BETWEEN 6 AND 17 "
+        sql = sql & "AND DatePart('h', ra.data_hora_apresentacao) BETWEEN 6 AND 17 "
     Else
-        sql = sql & "AND (DatePart('h', ra.data_hora_ra) >= 18 OR DatePart('h', ra.data_hora_ra) < 6) "
+        sql = sql & "AND (DatePart('h', ra.data_hora_apresentacao) >= 18 OR DatePart('h', ra.data_hora_apresentacao) < 6) "
     End If
 
-    sql = sql & "ORDER BY ra.data_hora_ra DESC;"
+    sql = sql & "ORDER BY ra.data_hora_apresentacao DESC;"
 
     Set rs = conn.Execute(sql)
 
     Do While Not rs.EOF
-        Dim horario
-        horario = TimeValue(rs("data_hora_ra"))
+        Dim horarioApresentacao, horarioProntidao
+        horarioApresentacao = TimeValue(rs("data_hora_apresentacao"))
 
         Response.Write "<tr>"
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & rs("nome") & "</td>"
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & rs("matricula") & "</td>"
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & rs("supervisao_ra") & " - " & rs("local_trabalho_ra") & "</td>"
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & horario & "</td>"
+        Response.Write "  <td class='fs-4 fw-bold text-center'>" & rs("nome") & "</td>"
+        Response.Write "  <td class='fs-4 fw-bold text-center'>" & rs("supervisao_ra") & " - " & rs("local_trabalho_ra") & "</td>"
+        Response.Write "<td class='fs-4 fw-bold text-center'>" & horarioApresentacao & "</td>"
 
-        Dim iconInfo
-        Select Case rs("status_tempo_ra")
-            Case "Pronto"
-                iconInfo = "<i class='fas fa-check-circle text-success'></i>"
-            Case "Pronto com atraso"
-                iconInfo = "<i class='fas fa-check-circle text-warning'></i>"
-            Case "Atrasado"
-                iconInfo = "<i class='fas fa-times-circle text-danger'></i>"
-            Case Else
-                iconInfo = "<i class='fas fa-clock text-warning'></i>"
-        End Select
+        Dim rsStatus, sqlStatus, currentStatus, icon, diffMinutes, mensagem
 
-        Response.Write "  <td class='fs-3 fw-bold text-center w-25'>" & iconInfo & "</td>"
+        sqlStatus = "SELECT status_funcionario FROM registros_apresentacao WHERE usuario_dss = '" & rs("matricula") & "' AND DateValue(data_hora_apresentacao) = Date()"
+        Set rsStatus = conn.Execute(sqlStatus)
+
+        diffMinutes = DateDiff("n", rs("data_hora_apresentacao"), Now())
+
+        horarioProntidao = ""
+        mensagem = ""
+        currentStatus = ""
+        If Not rsStatus.EOF Then
+            currentStatus = rsStatus("status_funcionario")
+        End If
+        rsStatus.Close
+
+        If currentStatus = "Pronto" Then
+            response.Write "<td class='fs-3 fw-bold text-center'><span class='text-success'>" & TimeValue(rs("data_hora_prontidao_ra")) & "</span></td>"
+            mensagem = "PODE ACIONAR"
+        ElseIf currentStatus = "Pronto com atraso" Then
+            response.Write "<td class='fs-3 fw-bold text-center'><span class='text-danger'>" & TimeValue(rs("data_hora_prontidao_ra")) & "</span></td>"
+            mensagem = "PODE ACIONAR"
+        Else
+            If diffMinutes <= 15 Then
+                response.write "<td class='fs-4 fw-bold text-center'><span class='text-warning'>NO PRAZO</span></td>"
+            Else
+                response.write "<td class='fs-4 fw-bold text-center'><span class='text-danger'>ATRASADO</span></td>"
+                mensagem = "PODE ACIONAR"
+            End If
+        End If
+
+        Response.Write "<td class='fs-4 fw-bold text-center'>" & mensagem & "</td>"
         Response.Write "</tr>"
 
         rs.MoveNext
@@ -170,4 +190,3 @@ Function carregarTabelaCCP(torreFiltro)
     conn.Close
 End Function
 %>
-
