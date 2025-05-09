@@ -8,6 +8,7 @@
   ' Pega os parâmetros da query string
   qsTorre = Request.QueryString("torre")
   qsGuarita = Request.QueryString("guarita")
+  
 %>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -46,23 +47,12 @@
     <img class="img-fluid me-4" style="height: 60px;" src="static/images/logo-vale.png" alt="VALE">
 
     <div class="flex-grow-1 text-center">
-      <div class="fs-1 fw-bold">SISTEMA TROCA DE TURNO - OP1</div>
+      <div class="fs-1 fw-bold"><span class="text-warning">PÁTIO</span> | SISTEMA TROCA DE TURNO - OP1</div>
     </div>
 
     <div class="fs-6 text-end" style="white-space: nowrap;">
       Última atualização: <br>
-      <%
-        Dim data_ultima_atualizacao, sql
-        Set conn = getConexao()
-        sql = "SELECT TOP 1 data_hora_apresentacao FROM registros_apresentacao ORDER BY data_hora_apresentacao DESC"
-        Set data_ultima_atualizacao = conn.execute(sql)
-
-        If Not data_ultima_atualizacao.EOF Then
-          Response.Write(FormatDateTime(data_ultima_atualizacao("data_hora_apresentacao"), vbShortDate) & " " & FormatDateTime(data_ultima_atualizacao("data_hora_apresentacao"), vbLongTime))
-        Else
-          Response.Write("--/--/-- --:--:--")
-        End If
-      %>
+      <%= ultimaAtualizacao() %>
     </div>
   </header>
 
@@ -86,13 +76,20 @@
               <input type="hidden" name="guarita" id="guaritaSelect" value="<%= qsGuarita %>">
             </div>
             <div class="col-auto">
-              <button type="submit" class="btn btn-primary mr-5">
+              <button type="submit" class="btn btn-primary mr-5" id="botaoApresentar">
                 <i class="fas fa-check"></i> Apresentar
               </button>
             </div>
             <div class="col-auto" id="mensagem"></div>
           </div>
         </form>
+      </div>
+      <div class="col-md-auto">
+        <div class="col-auto">
+          <button type="button" class="btn btn-secondary bg-dark" onclick="window.open('https://efvmworkplace/dss/login_form.asp', '_blank')">
+            <i class="fa fa-shield"></i> Assinar DSS
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -117,13 +114,17 @@
   <script>
     document.getElementById("formInserir").addEventListener("submit", function (event) {
       event.preventDefault(); // Impede o envio padrão do formulário
-      const formData = new FormData(this);
 
+      const formData = new FormData(this);
       const matricula = document.getElementById("matricula").value.trim();
       const torre = document.getElementById("torreSelect").value.trim();
       const guarita = document.getElementById("guaritaSelect").value.trim();
-
       const params = new URLSearchParams();
+      const btn = document.getElementById("botaoApresentar");
+
+      btn.disabled = true;
+      btn.innerText = "ARGUARDE..."
+
       params.append("matricula", matricula);
       params.append("torre", torre);
       params.append("guarita", guarita);
