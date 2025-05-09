@@ -20,7 +20,8 @@ end if
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Atualiza a página a cada minuto -->
-  <meta http-equiv="refresh" content="20; URL=ccp.asp?torre=<%=Server.URLEncode(torreFiltro)%>">
+  <!--<meta http-equiv="refresh" content="20; URL=ccp.asp?torre=<'%=Server.URLEncode(torreFiltro)%>">-->
+  <meta http-equiv="refresh" content="20; URL=ccp_original.asp?torre=<%=Server.URLEncode(torreFiltro)%>">
   <title>Controle de Apresentação</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -53,17 +54,7 @@ end if
 
     <div class="fs-6 text-end" style="white-space: nowrap;">
       Última atualização: <br>
-      <%
-        Dim conn, data_ultima_atualizacao, sql
-        Set conn = getConexao()
-        sql = "SELECT TOP 1 data_hora_apresentacao FROM registros_apresentacao ORDER BY data_hora_apresentacao DESC"
-        Set data_ultima_atualizacao = conn.Execute(sql)
-        If Not data_ultima_atualizacao.EOF Then
-          Response.Write FormatDateTime(data_ultima_atualizacao("data_hora_apresentacao"), vbShortDate) & " " & FormatDateTime(data_ultima_atualizacao("data_hora_apresentacao"), vbLongTime)
-        Else
-          Response.Write "--/--/-- --:--:--"
-        End If
-      %>
+      <%= ultimaAtualizacao() %>
     </div>
   </header>
 
@@ -71,7 +62,7 @@ end if
     <!-- Formulário de filtragem -->
     <div class="row mb-3">
       <div class="col-md-auto">
-        <form method="post" action="ccp.asp">
+        <form method="post" action="ccp_original.asp"> <!-- ALTERAR ACTION PARA ccp_original.asp -->
           <div class="row g-3 align-items-center">
             <div class="col-auto">
               <select class="form-select" name="torre" id="torre" required>
