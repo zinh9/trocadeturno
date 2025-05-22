@@ -10,14 +10,14 @@ Set conn = getConexao()
 
 If status_ra = "Pronto" Then
     sql = "UPDATE registros_apresentacao " & _
-          "SET status_tempo_ra = 'Pronto', data_hora_prontidao_ra = Date() " & _
+          "SET status_funcionario = 'Pronto', data_hora_prontidao_ra = Now() " & _
           "WHERE usuario_dss = '" & matricula & "' " & _
-          "AND DateValue(data_hora_ra) = Date()"
+          "AND DateValue(data_hora_apresentacao) = Date()"
 Else
     sql = "UPDATE registros_apresentacao " & _
-          "SET status_tempo_ra = 'Pronto com atraso', data_hora_prontidao_ra = Date() " & _
+          "SET status_funcionario = 'Pronto com atraso', data_hora_prontidao_ra = Now() " & _
           "WHERE usuario_dss = '" & matricula & "' " & _
-          "AND DateValue(data_hora_ra) = Date()"
+          "AND DateValue(data_hora_apresentacao) = Date()"
 End If
 
 conn.Execute(sql)
