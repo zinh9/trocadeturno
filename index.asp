@@ -8,6 +8,22 @@
   ' Pega os parâmetros da query string
   qsTorre = Request.QueryString("torre")
   qsGuarita = Request.QueryString("guarita")
+
+  select case qsTorre
+  case "TORRE_A", "TORRE_B", "TORRE_C", "TORRE_L", "PV_AB"
+  case else 
+    response.redirect "default.asp"
+  end select
+
+  select case qsGuarita 
+  case "Guarita_7", "Guarita_HT6", "Inert", "Hump_Yard", _
+    "Guarita_2", "Guarita_3", "Guarita_4", "Guarita_5", _
+    "Guarita_do_Corte", "Guarita_da_Rampa", _
+    "Guarita_da_Torre_L", _
+    "Porto_Velho", "Aroaba"
+  case else
+    response.redirect "default.asp"
+  end select
   
 %>
 <!DOCTYPE html>
@@ -29,16 +45,6 @@
     * {
       font-family: 'Oswald', sans-serif;
     }
-
-    .btn-aguardando {
-      background-color: #f0ad4e;
-      color: white;
-    }
-
-    .btn-atrasado {
-      background-color: #d9534f;
-      color: white;
-    }
   </style>
 </head>
 
@@ -52,14 +58,25 @@
 
     <div class="fs-6 text-end" style="white-space: nowrap;">
       Última atualização: <br>
-      <%= ultimaAtualizacao() %>
+      <%= ultimaAtualizacao(qsTorre) %>
     </div>
   </header>
 
   <div class="container-fluid px-4">
     <div class="row mb-4">
-      <div class="col-12">
-        <h5 class="card-title h1 text-white mt-1"><%= Replace(qsTorre, "_", " ") & " - " & Replace(qsGuarita, "_", " ") %></h5>
+      <div class="col-12 d-flex align-items-center">
+        <h5 class="card-title h1 text-white mt-1">
+        <%
+        if qsTorre = "PV_AB" then
+          response.write "VPN - " & Replace(qsGuarita, "_", " ")
+        else
+          response.write Replace(qsTorre, "_", " ") & " - " & Replace(qsGuarita, "_", " ")
+        end if
+        %>
+        </h5>
+        <div class="ms-auto text-white fs-2">
+          <div class="text-warning fw-bold" id="demo"></div>
+        </div>
       </div>
     </div>
     <div class="row mb-3">
@@ -91,6 +108,11 @@
           </button>
         </div>
       </div>
+      <div class="col-md-auto ms-auto">
+        <button class="btn btn-secondary" type="button" id="menuButton" onclick="window.location.href='http://efvmworkplace/trocadeturno/default.asp'">
+          <i class="fas fa-bars"></i> Menu
+        </button>
+      </div>
     </div>
   </div>
 
@@ -112,67 +134,21 @@
   </div>
 
   <script>
-    document.getElementById("formInserir").addEventListener("submit", function (event) {
-      event.preventDefault(); // Impede o envio padrão do formulário
+    var myVar = setInterval(myTimer, 1000);
+    function myTimer(){
+      var d = new Date(), displayDate;
 
-      const formData = new FormData(this);
-      const matricula = document.getElementById("matricula").value.trim();
-      const torre = document.getElementById("torreSelect").value.trim();
-      const guarita = document.getElementById("guaritaSelect").value.trim();
-      const params = new URLSearchParams();
-      const btn = document.getElementById("botaoApresentar");
+      if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
+        displayDate = d.toLocaleTimeString('pt-BR');
+      } else {
+        displayDate = d.toLocaleTimeString('pt-BR', {timeZone: 'America/Belem'})
+      }
 
-      btn.disabled = true;
-      btn.innerText = "ARGUARDE..."
-
-      params.append("matricula", matricula);
-      params.append("torre", torre);
-      params.append("guarita", guarita);
-
-      fetch("inserir.asp", {
-        method: "POST",
-        headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body: params.toString()
-      })
-      .then(response => response.text())
-      .then(data => {
-        data = data.trim();
-
-        if (data === "ok") {
-          setTimeout(() => {
-            document.getElementById("mensagem").innerHTML = "<div class='alert alert-success'>Funcionário apresentado com sucesso!</div>";
-          }, 1000);
-        } else if (data.indexOf("confirmar|") === 0) {
-          let supervisaoOriginal = data.split("|")[1];
-          if (confirm("Você está tentando se apresentar em outra supervisão. Sua supervisão original é: " + supervisaoOriginal + ".\nDeseja continuar?")) {
-            params.append("confirmado", "1");
-            
-            fetch('inserir.asp', {
-              method: 'POST',
-              headers: {"Content-Type": "application/x-www-form-urlencoded"},
-              body: params.toString()
-            })
-            .then(response => response.text())
-            .then(data => {
-              if (data.trim() === "ok") {
-                setTimeout(() => {
-                  document.getElementById("mensagem").innerHTML = "<div class='alert alert-success'>Funcionário apresentado com sucesso!</div>";
-                }, 1000);
-              } else {
-                alert("Erro ao registrar: " + data);
-              }
-            });
-          }
-        } else {
-          alert("Erro ao registrar: " + data);
-        }
-      })
-      .catch(error => {
-        alert("Erro na requisição: " + error);
-      });
-    });
+      document.getElementById("demo").innerHTML = displayDate;
+    }
   </script>
 
+  <script src="static/ajax.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
