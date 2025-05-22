@@ -25,11 +25,11 @@ Function carregarTabela(torreFiltro, guaritaFiltro)
     End If
 
     ' Condição que verifica se o turno retornou "manhã" ou "noite" 
-    If turno = "manha" Then
-        sql = sql & "AND DatePart('h', ra.data_hora_apresentacao) BETWEEN 5 AND 17 "
-    Else
-        sql = sql & "AND (DatePart('h', ra.data_hora_apresentacao) >= 17 OR DatePart('h', ra.data_hora_apresentacao) < 5) "
-    End If
+    'If turno = "manha" Then
+    '    sql = sql & "AND DatePart('h', ra.data_hora_apresentacao) BETWEEN 5 AND 17 "
+    'Else
+    '    sql = sql & "AND (DatePart('h', ra.data_hora_apresentacao) >= 17 OR DatePart('h', ra.data_hora_apresentacao) < 5) "
+    'End If
 
     ' Concatenar com o SQL para trazer o registro mais recente
     sql = sql & "ORDER BY ra.data_hora_apresentacao DESC;"
@@ -39,70 +39,65 @@ Function carregarTabela(torreFiltro, guaritaFiltro)
     ' While para apresentar na tabela da página os funcionários registrados 
     Do While Not rs.EOF
         ' Variaveis para minupular horarios de apresentação e prontidao, diferença de minutos, guarita e torre formatados
-        Dim horarioApresentacao, diferencaMinutos, horarioProntidao, guaritaFormatada, torreFormatada 
+        Dim horarioApresentacao, diferencaMinutos, horarioProntidao, guaritaFormatada, torreFormatada, diffAtual
         
+        diffAtual = DateDiff("n", rs("data_hora_apresentacao"), Now())    
         horarioApresentacao = TimeValue(rs("data_hora_apresentacao")) ' Pega apenas o horário
-        diferencaMinutos = DateDiff("n", rs("data_hora_apresentacao"), Now()) ' Pega a diferença de horarios entre apresentacao e atual
         guaritaFormatada = Replace(guaritaFiltro, "_", " ")
+
+        if torreFiltro = "PV_AB" then torreFiltro = "VPN" end if
         torreFormatada = Replace(torreFiltro, "_", " ")
 
-        Response.Write "<tr>"
-        Response.Write "<td class='fs-4 fw-bold text-center'>" & rs("nome") & "</td>"
-        Response.Write "<td class='fs-4 fw-bold text-center'>" & torreFormatada & " - " & guaritaFormatada & "</td>"
-        Response.Write "<td class='fs-4 fw-bold text-center'>" & horarioApresentacao & "</td>"
+        'response.write diffAtual & "<br>"
 
         Dim status, buttonClass, botaoProntidao ' Variaveis para status do funcionario, definir o estilo do botão e formatação do botão de prontidao
-        Dim rsAss, sqlAss, assinatura
+        Dim rsAss, sqlAss
 
         ' SQL para verificar se o funcionário fez a assinatura do DSS (como a página está sempre 
         'recarregando, ele faz essa verificação a cada vez que recarrega)
-        sqlAss = "SELECT COUNT(*) AS total FROM ASSINATURA_DSS WHERE usuario_dss = '" & rs("matricula") & "' AND DateValue(DATA_INSERT) = Date()"
+        sqlAss = "SELECT MAX(DATA_INSERT) AS horaAssinatura " & _
+                "FROM ASSINATURA_DSS " & _
+                "WHERE usuario_dss = '" & rs("matricula") & "' " & _
+                " AND DateValue(DATA_INSERT) = Date()"
         Set rsAss = conn.Execute(sqlAss)
 
-        assinatura = 0
-        If Not rsAss.EOF Then
-            assinatura = rsAss("total") ' Atribui o valor a variavel
-        End If
-        rsAss.Close
+        Dim horaAssinatura, diffAss
 
-        ' Condição que verifica se o funcionário fez a assinatura do DSS
-        If assinatura > 0 Then
-            ' Condição que verifica se o funcionário está dentro dos 15 minutos após a assinatura do DSS
-            If diferencaMinutos <= 15 Then
+        If Not rsAss.EOF And Not IsNull(rsAss("horaAssinatura")) Then
+            horaAssinatura = rsAss("horaAssinatura")
+            diffAss = DateDiff("n", rs("data_hora_apresentacao"), horaAssinatura)
+
+            If diffAss <= 15 and diffAtual <= 15 Then
                 status = "Pronto"
-
-                botaoProntidao = "<form method='post' action='atualizar_status.asp'>" & _
-                "<input type='hidden' name='matricula' value='" & rs("matricula") & "'>" & _
-                "<input type='hidden' name='supervisao_ra' value='" & rs("supervisao_ra") & "'>" & _
-                "<input type='hidden' name='local_trabalho_ra' value='" & rs("local_trabalho_ra") & "'>" & _
-                "<input type='hidden' name='status' value='" & status & "'>" & _
-                "<button type='submit' class='btn btn-success'>Pronto</button></form>"
+                buttonClass = "btn btn-success"
             Else
                 status = "Pronto com atraso"
-
-                botaoProntidao = "<form method='post' action='atualizar_status.asp'>" & _
-                "<input type='hidden' name='matricula' value='" & rs("matricula") & "'>" & _
-                "<input type='hidden' name='supervisao_ra' value='" & rs("supervisao_ra") & "'>" & _
-                "<input type='hidden' name='local_trabalho_ra' value='" & rs("local_trabalho_ra") & "'>" & _
-                "<input type='hidden' name='status' value='" & status & "'>" & _
-                "<button type='submit' class='btn btn-danger'>Pronto</button></form>"
-            End If
+                buttonClass = "btn btn-danger"
+                End If
         Else
-            ' Caso ainda não fez o DSS, entra na condição onde coloca um botão desabilitado que aguarda o DSS
-            If diferencaMinutos <= 15 Then
-                botaoProntidao = "<button class='btn btn-aguardando' disabled>Aguardando DSS...</button>"
+            ' não assinou ainda
+            diffAss = DateDiff("n", rs("data_hora_apresentacao"), Now())
+            If diffAss <= 15 Then
+                status = ""  ' aguardando
+                buttonClass = ""
             Else
-                ' Caso passe dos 15 minutos e o funcionário não fez o DSS, o botão é habilitado com a cor
-                ' vermelha para dizer que está pronto com atraso
                 status = "Pronto com atraso"
-
-                botaoProntidao = "<form method='post' action='atualizar_status.asp'>" & _
-                    "<input type='hidden' name='matricula' value='" & rs("matricula") & "'>" & _
-                    "<input type='hidden' name='supervisao_ra' value='" & rs("supervisao_ra") & "'>" & _
-                    "<input type='hidden' name='local_trabalho_ra' value='" & rs("local_trabalho_ra") & "'>" & _
-                    "<input type='hidden' name='status' value='" & status & "'>" & _
-                    "<button type='submit' class='btn btn-danger'>Pronto</button></form>"
+                buttonClass = "btn btn-danger"
             End If
+        End If
+
+        rsAss.Close
+            
+        ' Monta o botão pronto com a classe e o value corretos
+        If status <> "" Then
+            botaoProntidao = "<form method='post' action='atualizar_status.asp'>" & _
+                "<input type='hidden' name='matricula' value='" & rs("matricula") & "'>" & _
+                "<input type='hidden' name='supervisao_ra' value='" & rs("supervisao_ra") & "'>" & _
+                "<input type='hidden' name='local_trabalho_ra' value='" & rs("local_trabalho_ra") & "'>" & _
+                "<input type='hidden' name='status' value='" & status & "'>" & _
+                "<button type='submit' class='" & buttonClass & "'>Pronto</button></form>"
+        Else
+            botaoProntidao = "<button class='btn btn-aguardando' disabled>Aguardando DSS...</button>"
         End If
 
         ' Lógica do ícone de status
@@ -146,9 +141,15 @@ Function carregarTabela(torreFiltro, guaritaFiltro)
             End If
         End If
 
-        Response.Write "<td class='fs-4 fw-bold text-center'>" & botaoProntidao & "</td>"
-        Response.Write "<td class='fs-4 fw-bold text-center'>" & horarioProntidao & "</td>"
-        Response.Write "</tr>"
+        if diffAtual <= 720 then
+            Response.Write "<tr>"
+            Response.Write "<td class='fs-4 fw-bold text-center'>" & rs("nome") & "</td>"
+            Response.Write "<td class='fs-4 fw-bold text-center'>" & torreFormatada & " - " & guaritaFormatada & "</td>"
+            Response.Write "<td class='fs-4 fw-bold text-center'>" & horarioApresentacao & "</td>"
+            Response.Write "<td class='fs-4 fw-bold text-center'>" & botaoProntidao & "</td>"
+            Response.Write "<td class='fs-4 fw-bold text-center'>" & horarioProntidao & "</td>"
+            Response.Write "</tr>"
+        end if
 
         rs.MoveNext
     Loop
@@ -185,7 +186,12 @@ Function carregarTabelaCCP(torreFiltro)
 
         horarioApresentacao = TimeValue(rs("data_hora_apresentacao"))
         guaritaFormatada = Replace(rs("local_trabalho_ra"), "_", " ")
-        torreFormatada = Replace(rs("supervisao_ra"), "_", " ")
+
+        if rs("supervisao_ra") = "PV_AB" then 
+            torreFormatada = "VPN"
+        Else
+            torreFormatada = Replace(rs("supervisao_ra"), "_", " ")
+        end if
 
         Response.Write "<tr>"
         Response.Write "<td class='fs-4 fw-bold text-center'>" & rs("nome") & "</td>"
