@@ -10,6 +10,8 @@ If Request.ServerVariables("REQUEST_METHOD") = "POST" Then
     matricula = Request.Form("matricula")
     torre = Request.Form("torre")
     guarita = Request.Form("guarita")
+
+    if torre = "TORRE_L" then torre = "Torre_L" End If
     
     ' Verifica se o confirmado para registro em outra supervisão foi enviado (se confirmado = 1, então não pede confirmação)
     If Request.Form("confirmado") = "" Then
@@ -34,11 +36,21 @@ If Request.ServerVariables("REQUEST_METHOD") = "POST" Then
         dataAmanha = DateAdd("d", 1, dataHoje)
 
         If turno = "manha" Then
-            condicaoHora = "(data_hora_ra >= " & formatDataHoraUSA(dataHoje, "06:00:00") & " AND data_hora_ra <= " & formatDataHoraUSA(dataHoje, "17:59:59") & ")"
-            turno_funcionario = "06x18"
+            condicaoHora = "(data_hora_apresentacao >= " & formatDataHoraUSA(dataHoje, "05:00:00") & " AND data_hora_apresentacao <= " & formatDataHoraUSA(dataHoje, "16:59:59") & ")"
+            
+            if hour(now()) = 5 then
+                turno_funcionario = "05x17"
+            else
+                turno_funcionario = "06x18"
+            end if
         Else
-            condicaoHora = "((data_hora_ra >= " & formatDataHoraUSA(dataHoje, "18:00:00") & ") AND (data_hora_ra <= " & formatDataHoraUSA(dataAmanha, "05:59:59") & "))"
-            turno_funcionario = "18x06"
+            condicaoHora = "((data_hora_apresentacao >= " & formatDataHoraUSA(dataHoje, "17:00:00") & ") AND (data_hora_apresentacao <= " & formatDataHoraUSA(dataAmanha, "04:59:59") & "))"
+            
+            if hour(now()) = 17 then
+                turno_funcionario = "17x05"
+            else
+                turno_funcionario = "18x06"
+            end if
         End If
 
         ' Verifica se já houve registro neste turno para o funcionário
@@ -49,8 +61,8 @@ If Request.ServerVariables("REQUEST_METHOD") = "POST" Then
             if (torre <> supervisao) And (confirmado <> "1") then
                 response.write("confirmar|" & supervisao)
             else    
-                sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_ra, supervisao_ra, local_trabalho_ra, turno_funcionario) " & _
-                    "VALUES ('" & usuario_dss & "', Now(), '" & torre & "', '" & guarita & "', '" & turno_funcionario & "')"
+                sql = "INSERT INTO registros_apresentacao (usuario_dss, data_hora_apresentacao, supervisao_ra, local_trabalho_ra, turno_funcionario, supervisao_original_ra) " & _
+                    "VALUES ('" & usuario_dss & "', Now(), '" & torre & "', '" & guarita & "', '" & turno_funcionario & "', '" & supervisao & "')"
                 conn.execute(sql)
                 Response.Write "ok"
             end if
