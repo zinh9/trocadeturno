@@ -20,9 +20,9 @@ end if
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Atualiza a página a cada minuto -->
-  <!--<meta http-equiv="refresh" content="20; URL=ccp.asp?torre=<'%=Server.URLEncode(torreFiltro)%>">-->
-  <meta http-equiv="refresh" content="20; URL=ccp_original.asp?torre=<%=Server.URLEncode(torreFiltro)%>">
-  <title>Controle de Apresentação</title>
+  <meta http-equiv="refresh" content="20; URL=ccp.asp?torre=<%=Server.URLEncode(torreFiltro)%>">
+  <!--<meta http-equiv="refresh" content="20; URL=ccp_original.asp?torre=<'%=Server.URLEncode(torreFiltro)%>">-->
+  <title>Controle de Apresentação | CCP</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,7 +54,7 @@ end if
 
     <div class="fs-6 text-end" style="white-space: nowrap;">
       Última atualização: <br>
-      <%= ultimaAtualizacao() %>
+      <%= ultimaAtualizacao(torreFiltro) %>
     </div>
   </header>
 
@@ -62,7 +62,7 @@ end if
     <!-- Formulário de filtragem -->
     <div class="row mb-3">
       <div class="col-md-auto">
-        <form method="post" action="ccp_original.asp"> <!-- ALTERAR ACTION PARA ccp_original.asp -->
+        <form method="post" action="ccp.asp"> <!-- ALTERAR ACTION PARA ccp_original.asp -->
           <div class="row g-3 align-items-center">
             <div class="col-auto">
               <select class="form-select" name="torre" id="torre" required>
@@ -72,6 +72,7 @@ end if
                 <option value="TORRE_B" <% If torreFiltro = "TORRE_B" Then Response.Write "selected" %>>TORRE B</option>
                 <option value="TORRE_C" <% If torreFiltro = "TORRE_C" Then Response.Write "selected" %>>TORRE C</option>
                 <option value="TORRE_L" <% If torreFiltro = "TORRE_L" Then Response.Write "selected" %>>TORRE L</option>
+                <option value="PV_AB" <% If torreFiltro = "PV_AB" Then Response.Write "selected" %>>VPN</option>
               </select>
             </div>
             <div class="col-auto">
